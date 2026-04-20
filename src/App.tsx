@@ -14,7 +14,12 @@ import LoadGameMenu from './components/menu/LoadGameMenu';
 import { cn } from '@/lib/utils';
 
 export default function App() {
-  const { theme, fontSize, fontFamily, apiKey } = useSettingsStore();
+  const { 
+    theme, fontSize, fontFamily, apiKey, 
+    audioEnabled, narratorVoice, 
+    setApiKey, setTheme, setFontSize, setFontFamily, 
+    setAudioEnabled, setNarratorVoice 
+  } = useSettingsStore();
   const [view, setView] = useState<'menu' | 'wizard' | 'game' | 'settings' | 'load'>('menu');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -143,8 +148,8 @@ export default function App() {
                     type="password" 
                     className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none"
                     placeholder="Enter your API key..."
-                    value={useSettingsStore.getState().apiKey}
-                    onChange={(e) => useSettingsStore.getState().setApiKey(e.target.value)}
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
                   />
                 </div>
 
@@ -155,7 +160,7 @@ export default function App() {
                       type="range" min="12" max="24" 
                       className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
                       value={fontSize}
-                      onChange={(e) => useSettingsStore.getState().setFontSize(parseInt(e.target.value))}
+                      onChange={(e) => setFontSize(parseInt(e.target.value))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -163,7 +168,7 @@ export default function App() {
                     <select 
                       className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm outline-none"
                       value={fontFamily}
-                      onChange={(e) => useSettingsStore.getState().setFontFamily(e.target.value)}
+                      onChange={(e) => setFontFamily(e.target.value)}
                     >
                       <option value="Inter">Standard (Inter)</option>
                       <option value="Playfair Display">High Gothic (Serif)</option>
@@ -171,6 +176,39 @@ export default function App() {
                     </select>
                   </div>
                 </div>
+
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold parchment-text uppercase">Vox-Array Narrative (TTS)</h4>
+                      <p className="text-xs text-muted-foreground">Enable audio read-aloud for narrative and dialogues.</p>
+                    </div>
+                    <Button 
+                      variant={audioEnabled ? "default" : "outline"}
+                      className={cn("w-24 uppercase tracking-[0.2em] text-[10px]", audioEnabled && "bg-primary text-white")}
+                      onClick={() => setAudioEnabled(!audioEnabled)}
+                    >
+                      {audioEnabled ? 'Active' : 'Disabled'}
+                    </Button>
+                  </div>
+                </div>
+
+                {audioEnabled && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Narrator Vox-Profile</label>
+                    <select 
+                      className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm outline-none"
+                      value={narratorVoice}
+                      onChange={(e) => setNarratorVoice(e.target.value)}
+                    >
+                      <option value="Kore">Kore (Balanced)</option>
+                      <option value="Puck">Puck (Agile)</option>
+                      <option value="Charon">Charon (Ancient)</option>
+                      <option value="Fenrir">Fenrir (Combat)</option>
+                      <option value="Zephyr">Zephyr (Ethereal)</option>
+                    </select>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>

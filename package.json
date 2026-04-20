@@ -11,6 +11,21 @@
     "clean": "rm -rf dist dist-electron",
     "lint": "tsc --noEmit"
   },
+  "build": {
+    "appId": "com.grimechoes.40k",
+    "productName": "Grim Echoes: 40K Solo",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "public/icon.png"
+    }
+  },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
     "@fontsource-variable/geist": "^5.2.8",

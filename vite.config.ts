@@ -11,7 +11,7 @@ export default defineConfig(({mode}) => {
     plugins: [
       react(), 
       tailwindcss(),
-      ...(process.env.ELECTRON ? [
+      ...(process.env.ELECTRON === 'true' && process.env.DISABLE_HMR !== 'true' ? [
         electron([
           {
             entry: 'electron/main.ts',

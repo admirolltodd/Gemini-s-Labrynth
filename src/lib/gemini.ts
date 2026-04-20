@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { GameState } from "../types/game";
 
 const SYSTEM_PROMPT_HEADER = `
@@ -9,7 +9,9 @@ STRICT OUTPUT FORMAT:
 You MUST respond ONLY with a valid JSON object. No markdown, no preamble.
 JSON Schema:
 {
-  "narrative": "2-4 vivid sentences describing the scene and outcome of the last action.",
+  "narrative": "2-4 vivid sentences describing the scene and outcome of the last action. This should ONLY be descriptive narration.",
+  "dialogue": "A short line of spoken dialogue from a character (often the companion or a key NPC) if appropriate for the scene. Otherwise null.",
+  "dialogue_speaker": "The name of the character speaking the dialogue. Otherwise null.",
   "choices": {
     "A": "Option A text",
     "B": "Option B text",
@@ -33,11 +35,16 @@ JSON Schema:
 RULES:
 1. Follow the Warhammer 40,000 Solo RPG v2.0 rules strictly.
 2. Tone: Oppressive, dramatic, witty, grimdark.
-3. Every scene must offer exactly 4 choices (A/B/C/D).
-4. Perform all dice rolls yourself using the format in the roll_log.
-5. Difficulty Targets (DC): Narrative (8-20), Balanced (10-22), Grimdark (12-24).
-6. Criticals: Nat-20 is auto-success + bonus. Nat-1 is auto-fail + complication.
-7. Complications: Use them on failures to keep the story moving.
+3. Dialogue: When the player interacts with an NPC or their companion, use the 'dialogue' and 'dialogue_speaker' fields. Do NOT put dialogue in the 'narrative' field if it is a major line.
+4. Companion Choices: Loyalty and Personality MUST influence choice generation:
+   - Loyalty >= 70 (Devoted/Loyal): At least one choice should be a specialized tactical recommendation or unique support action from the companion (e.g., "[Name]'s Tactical Strike").
+   - Loyalty <= 30 (Disgruntled/Insubordinate): At least one choice should reflect friction, reluctance, or the need to spend resources/INF to command them.
+   - Personality: A "Death Cult Assassin" companion will suggest lethal options; a "Tech-Priest" will suggest mechanical solutions.
+5. Every scene must offer exactly 4 choices (A/B/C/D).
+6. Perform all dice rolls yourself using the format in the roll_log.
+7. Difficulty Targets (DC): Narrative (8-20), Balanced (10-22), Grimdark (12-24).
+8. Criticals: Nat-20 is auto-success + bonus. Nat-1 is auto-fail + complication.
+9. Complications: Use them on failures to keep the story moving.
 
 [WARHAMMER 40,000 SOLO RPG DOCUMENT]
 # WARHAMMER 40,000 SOLO RPG — LLM EDITION v2.0
@@ -99,5 +106,30 @@ Player Action: ${action}
   } catch (error) {
     console.error("Gemini Turn Error:", error);
     throw error;
+  }
+}
+
+export async function generateSpeech(apiKey: string, text: string, voice: string = 'Kore') {
+  const ai = new GoogleGenAI({ apiKey });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-tts-preview",
+      contents: [{ parts: [{ text }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: voice as any },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    return base64Audio;
+  } catch (error) {
+    console.error("Gemini TTS Error:", error);
+    return null;
   }
 }

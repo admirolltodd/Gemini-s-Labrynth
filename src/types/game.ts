@@ -48,7 +48,13 @@ export interface GameState {
   chapter: string;
   last_scene_summary: string;
   active_threats: string[];
-  history: { role: 'user' | 'ai'; content: string; narrative?: string; choices?: Record<string, string> }[];
+  history: { 
+    role: 'user' | 'ai'; 
+    content: string; 
+    narrative?: string; 
+    choices?: Record<string, string>;
+    dialogue?: { speaker: string; text: string } | null;
+  }[];
   portrait?: string;
 }
 
@@ -57,4 +63,6 @@ export interface Settings {
   theme: 'light' | 'dark' | 'grimdark';
   fontSize: number;
   fontFamily: string;
+  audioEnabled: boolean;
+  narratorVoice: string;
 }
