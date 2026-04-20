@@ -1,6 +1,6 @@
 {
-  "name": "Gemini's Labyrinth",
-  "description": "An intricate, AI-driven adventure game where Gemini generates the world, narrates your journey, and reacts to your every word.",
+  "name": "Grim Echoes: 40K Solo RPG",
+  "description": "A high-fidelity, solo narrative RPG set in the grim darkness of the far future. Powered by Gemini AI, it functions as a digital Game Master for lore-accurate adventures.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["AI Storytelling", "Character Selection", "Save/Load Management"]
 }

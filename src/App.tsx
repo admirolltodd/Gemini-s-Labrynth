@@ -24,7 +24,11 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    document.documentElement.className = `theme-${theme}`;
+    const isDark = theme === 'dark' || theme === 'grimdark';
+    document.documentElement.className = `theme-${theme} ${isDark ? 'dark' : ''}`;
+    
+    // Set data-theme for certain components
+    document.documentElement.setAttribute('data-theme', theme);
     
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { GameState } from "../types/game";
+import { GameState, Stats } from "../types/game";
 
 const SYSTEM_PROMPT_HEADER = `
 You are the elite Game Master for "Grim Echoes: 40K Solo". 
@@ -131,5 +131,53 @@ export async function generateSpeech(apiKey: string, text: string, voice: string
   } catch (error) {
     console.error("Gemini TTS Error:", error);
     return null;
+  }
+}
+
+export interface QuickStartCharacter {
+  name: string;
+  archetype: string;
+  backstory: string;
+  motivation: string;
+  stats: Stats;
+  skills: string[];
+  talents: string[];
+}
+
+export async function generatePrebuiltCharacters(apiKey: string): Promise<QuickStartCharacter[]> {
+  const ai = new GoogleGenAI({ apiKey });
+  
+  const prompt = `
+    Generate exactly 3 unique, diverse Warhammer 40,000 character pre-builds for a solo RPG.
+    Each must have:
+    - name: A lore-accurate name.
+    - archetype: One of ["Guardsman Veteran", "Exiled Psyker", "Hive Ganger", "Rogue Trader Scion", "Penitent Sister", "Tech-Priest Initiate", "Criminal Conscript", "Civilian Survivor"].
+    - backstory: 2-3 atmospheric sentences describing their origin.
+    - motivation: One of ["Faith", "Vengeance", "Curiosity", "Survival", "Power"].
+    - stats: Allocate exactly 16 points among STR, DEX, TGH, INT, WIL, AWA, INF (min 1 each).
+    - skills: 3 unique skills from ["Athletics", "Intimidation", "Stealth", "Piloting", "Sleight of Hand", "Tech-Use", "Medicae", "Lore", "Coercion", "Scrutiny", "Survival", "Investigation", "Perception", "Barter", "Deception", "Charm"].
+    - talents: 1 talent from ["Duelist's Flourish", "Relentless Advance", "Deadeye", "Brutal Swing", "Silver Tongue", "Intimidating Presence", "Black Market Savvy", "Mechanicus Adept", "Tough as Nails", "Street Survivor"].
+
+    STRICT JSON OUTPUT FORMAT:
+    [
+      { "name": "...", "archetype": "...", "backstory": "...", "motivation": "...", "stats": { "STR": 1... }, "skills": ["...", "...", "..."], "talents": ["..."] },
+      ...
+    ]
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-pro-preview",
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const result = JSON.parse(response.text || "[]");
+    return result;
+  } catch (error) {
+    console.error("Gemini Pre-build Error:", error);
+    return [];
   }
 }

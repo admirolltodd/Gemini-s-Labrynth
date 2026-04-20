@@ -57,9 +57,9 @@ npm run build:electron
 
 echo "--- Build Complete! ---"
 echo ""
-echo "Installation Artifacts found in: dist-electron/"
+echo "Installation Artifacts found in: release/"
 echo "You can install the .deb package using:"
-echo "sudo dpkg -i dist-electron/*.deb"
+echo "sudo dpkg -i release/*.deb"
 echo ""
 echo "Or run the AppImage directly:"
-echo "./dist-electron/*.AppImage"
+echo "./release/*.AppImage"

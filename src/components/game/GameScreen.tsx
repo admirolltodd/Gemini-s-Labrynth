@@ -255,7 +255,7 @@ export default function GameScreen() {
                 {msg.role === 'ai' ? (
                   <div className="space-y-4 w-full">
                     {msg.narrative && (
-                      <div className="text-[10px] font-mono text-muted-foreground bg-secondary/30 px-3 py-1 rounded border border-border/30 inline-block">
+                      <div className="text-[10px] font-mono text-accent bg-accent/10 px-3 py-1 rounded border border-accent/20 inline-block">
                         {msg.narrative}
                       </div>
                     )}
@@ -333,7 +333,8 @@ export default function GameScreen() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg text-sm italic text-primary">
+                  <div className="bg-primary/20 border border-primary/30 px-4 py-3 rounded-lg text-sm font-medium tracking-tight text-primary shadow-sm bg-linear-to-r from-primary/20 to-transparent">
+                    <span className="opacity-50 text-[10px] uppercase block mb-1">Transmission:</span>
                     {msg.content}
                   </div>
                 )}
@@ -399,7 +400,7 @@ export default function GameScreen() {
       />
 
       {/* HUD / Character Card */}
-      <div className="h-24 border-t border-border bg-black/80 flex items-center px-8 gap-8 z-20">
+      <div className="h-24 border-t border-border bg-background/90 backdrop-blur-md flex items-center px-8 gap-8 z-20">
         {/* Portrait */}
         <div className="relative w-20 h-20 -mt-10 border-2 border-primary rounded-lg overflow-hidden bg-card shadow-2xl shadow-primary/20">
           {isGeneratingPortrait ? (

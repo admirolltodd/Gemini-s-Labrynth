@@ -8,8 +8,10 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Shield, Zap, Book, Users, Sword, Crosshair, Brain, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shield, Zap, Book, Users, Sword, Crosshair, Brain, Heart, Dice5, Loader2, Sparkles, UserPlus } from 'lucide-react';
 import { Archetype, Difficulty, Stats } from '../../types/game';
+import { generatePrebuiltCharacters, QuickStartCharacter } from '../../lib/gemini';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 const ARCHETYPES: { id: Archetype; description: string; icon: React.ReactNode }[] = [
   { id: 'Guardsman Veteran', description: 'Hardened soldier of the Astra Militarum.', icon: <Shield size={20} /> },
@@ -42,22 +44,51 @@ const SKILLS = [
 ];
 
 export default function CharacterWizard({ onComplete, onCancel }: { onComplete: () => void; onCancel: () => void }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // 0 is Quick Start Selection
   const { setGameState, resetGame } = useGameStore();
+  const { apiKey } = useSettingsStore();
   
   // Local wizard state
   const [name, setName] = useState('');
   const [backstory, setBackstory] = useState('');
   const [archetype, setArchetype] = useState<Archetype | ''>('');
   const [stats, setStats] = useState<Stats>({ STR: 1, DEX: 1, TGH: 1, INT: 1, WIL: 1, AWA: 1, INF: 1 });
-  const [pointsLeft, setPointsLeft] = useState(16 - 7); // Start with 1 in each
+  const [pointsLeft, setPointsLeft] = useState(16 - 7);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedTalent, setSelectedTalent] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('Balanced');
   const [motivation, setMotivation] = useState('Survival');
 
+  // Quick Start State
+  const [prebuilds, setPrebuilds] = useState<QuickStartCharacter[]>([]);
+  const [isLoadingPrebuilds, setIsLoadingPrebuilds] = useState(false);
+
+  React.useEffect(() => {
+    if (apiKey) {
+      loadPrebuilds();
+    }
+  }, [apiKey]);
+
+  const loadPrebuilds = async () => {
+    setIsLoadingPrebuilds(true);
+    const results = await generatePrebuiltCharacters(apiKey);
+    setPrebuilds(results);
+    setIsLoadingPrebuilds(false);
+  };
+
+  const handleSelectQuickStart = (char: QuickStartCharacter) => {
+    setName(char.name);
+    setBackstory(char.backstory);
+    setArchetype(char.archetype as Archetype);
+    setStats(char.stats);
+    setSelectedSkills(char.skills);
+    setSelectedTalent(char.talents[0]);
+    setMotivation(char.motivation);
+    setStep(6); // Go to final review
+  };
+
   const nextStep = () => setStep(s => Math.min(s + 1, 6));
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const prevStep = () => setStep(s => Math.max(s - 1, 0));
 
   const handleStatChange = (stat: keyof Stats, delta: number) => {
     if (delta > 0 && pointsLeft <= 0) return;
@@ -94,6 +125,78 @@ export default function CharacterWizard({ onComplete, onCancel }: { onComplete: 
     <div className="flex-1 flex flex-col h-full bg-background">
       <div className="flex-1 overflow-hidden relative">
         <AnimatePresence mode="wait">
+          {step === 0 && (
+            <StepWrapper key="quickstart" title="Choose Your Destiny">
+              <div className="max-w-6xl mx-auto space-y-8">
+                <div className="text-center space-y-2">
+                  <p className="text-muted-foreground italic">"From the billions of souls in the Imperium, fate pulls three into the light..."</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {isLoadingPrebuilds ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <Card key={i} className="bg-secondary/20 border-dashed animate-pulse h-[300px] flex items-center justify-center">
+                        <Loader2 className="animate-spin text-muted-foreground" />
+                      </Card>
+                    ))
+                  ) : (
+                    prebuilds.map((char, i) => (
+                      <Card 
+                        key={i} 
+                        className="group cursor-pointer hover:border-primary transition-all bg-secondary/10 hover:bg-primary/5 flex flex-col"
+                        onClick={() => handleSelectQuickStart(char)}
+                      >
+                        <CardHeader className="p-4 border-b border-border/50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="parchment-text text-xl">{char.name}</CardTitle>
+                              <Badge variant="outline" className="text-[10px] uppercase">{char.archetype}</Badge>
+                            </div>
+                            <Sparkles className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 flex-1 flex flex-col">
+                          <p className="text-xs italic text-muted-foreground leading-relaxed mb-4 flex-1">
+                            {char.backstory}
+                          </p>
+                          <div className="grid grid-cols-3 gap-1 text-[10px] uppercase font-mono mb-4 text-center">
+                            <div className="bg-background/50 p-1 rounded">STR {char.stats.STR}</div>
+                            <div className="bg-background/50 p-1 rounded">DEX {char.stats.DEX}</div>
+                            <div className="bg-background/50 p-1 rounded">TGH {char.stats.TGH}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Key Talent</div>
+                            <Badge className="bg-primary/20 text-primary hover:bg-primary/20 w-full justify-center text-[10px]">{char.talents[0]}</Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center gap-4 pt-8">
+                  <div className="flex gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 border-primary/30 hover:bg-primary/5 uppercase tracking-widest text-xs"
+                      onClick={loadPrebuilds}
+                    >
+                      <Dice5 size={16} /> Roll New Destiny
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 border-border hover:bg-secondary/50 uppercase tracking-widest text-xs"
+                      onClick={() => setStep(1)}
+                    >
+                      <UserPlus size={16} /> Custom Operative
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground uppercase opacity-50">Select a pre-build, roll new options, or forge your own path.</p>
+                </div>
+              </div>
+            </StepWrapper>
+          )}
+
           {step === 1 && (
             <StepWrapper key="step1" title="Identity & Origins">
               <div className="space-y-6 max-w-xl mx-auto">
@@ -319,23 +422,25 @@ export default function CharacterWizard({ onComplete, onCancel }: { onComplete: 
       </div>
 
       <div className="h-20 border-t border-border flex items-center justify-between px-8 bg-card/50">
-        <Button variant="ghost" onClick={step === 1 ? onCancel : prevStep}>
+        <Button variant="ghost" onClick={step === 0 ? onCancel : prevStep}>
           <ChevronLeft className="mr-2" size={18} />
-          {step === 1 ? 'Cancel' : 'Previous'}
+          {step === 0 ? 'Cancel' : 'Previous'}
         </Button>
         <div className="flex gap-2">
-          {[1, 2, 3, 4, 5, 6].map(s => (
-            <div key={s} className={cn("w-2 h-2 rounded-full transition-all", s === step ? "bg-primary w-4" : "bg-border")} />
+          {[0, 1, 2, 3, 4, 5, 6].map(s => (
+            <div key={s} className={cn("w-1 h-1 rounded-full transition-all", s === step ? "bg-primary w-3 h-1.5" : "bg-border")} />
           ))}
         </div>
         <Button 
           disabled={
+            (step === 0) ||
             (step === 1 && (!name || !backstory)) ||
             (step === 2 && !archetype) ||
             (step === 3 && pointsLeft > 0) ||
             (step === 4 && (selectedSkills.length < 3 || !selectedTalent))
           }
           onClick={step === 6 ? finalize : nextStep}
+          className={cn(step === 0 && "opacity-0 pointer-events-none")}
         >
           {step === 6 ? 'Confirm Operative' : 'Next'}
           <ChevronRight className="ml-2" size={18} />

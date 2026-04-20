@@ -67,10 +67,10 @@ If you prefer to handle the steps manually:
     ```
 
 ### 4. Running the Application
-After the build process completes, your installers are located in the `dist-electron/` folder.
+After the build process completes, your installers are located in the `release/` folder.
 
--   **Install .deb package**: `sudo dpkg -i dist-electron/*.deb`
--   **Run AppImage**: `./dist-electron/*.AppImage` (Ensure it is executable first with `chmod +x`).
+-   **Install .deb package**: `sudo dpkg -i release/*.deb`
+-   **Run AppImage**: `./release/*.AppImage` (Ensure it is executable first with `chmod +x`).
 
 ---
 
@@ -85,6 +85,14 @@ To run the game in a web browser for development or quick play:
     npm run dev
     ```
 3.  **Access**: Open `http://localhost:3000` in your browser.
+
+### 📦 Universal Applet (Single HTML File)
+You can build the entire game into a single, portable HTML file that runs anywhere without a server:
+
+```bash
+npm run build:singlefile
+```
+The resulting `dist/index.html` is a "universal applet" containing all styles, scripts, and assets.
 
 ---
 
