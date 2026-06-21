@@ -34,7 +34,7 @@ JSON Schema:
 
 RULES:
 1. Follow the Warhammer 40,000 Solo RPG v2.0 rules strictly.
-2. Tone: Oppressive, dramatic, witty, grimdark.
+2. Tone: Oppressive, dramatic, and grimdark, yet punctuated by moments of epic scale. Describe environments with the grand majesty found in classic 40k art: ruined gothic spires piercing through war-smoke, golden sunlight illuminating battle-scarred Space Marines, massive celestial bodies looming over Tyranid swarms, and the sheer awe-inspiring scale of the Emperor's wars.
 3. Dialogue: When the player interacts with an NPC or their companion, use the 'dialogue' and 'dialogue_speaker' fields. Do NOT put dialogue in the 'narrative' field if it is a major line.
 4. Companion Choices: Loyalty and Personality MUST influence choice generation:
    - Loyalty >= 70 (Devoted/Loyal): At least one choice should be a specialized tactical recommendation or unique support action from the companion (e.g., "[Name]'s Tactical Strike").
@@ -71,9 +71,13 @@ Easy: 5 XP, Standard: 10 XP, Hard: 15 XP, Milestone: 25+ XP.
 Raise Stat: New Value x 3 XP. Skill: 10 XP. Talent: 15 XP.
 `;
 
-export async function processGameTurn(apiKey: string, action: string, currentState: GameState) {
+export async function processGameTurn(
+  apiKey: string,
+  action: string,
+  currentState: GameState,
+) {
   const ai = new GoogleGenAI({ apiKey });
-  
+
   // Construct context
   const context = `
 Current Operative: ${currentState.archetype}
@@ -81,9 +85,9 @@ Difficulty: ${currentState.difficulty}
 Motivation: ${currentState.motivation}
 Stats: ${JSON.stringify(currentState.stats)}
 HP: ${currentState.hp.current}/${currentState.hp.max}
-Skills: ${currentState.skills.join(', ')}
-Talents: ${currentState.talents.join(', ')}
-Inventory: ${currentState.gear.join(', ')}
+Skills: ${currentState.skills.join(", ")}
+Talents: ${currentState.talents.join(", ")}
+Inventory: ${currentState.gear.join(", ")}
 Companion: ${currentState.companion.name} (Loyalty: ${currentState.companion.loyalty})
 Chapter: ${currentState.chapter}
 Last Scene Summary: ${currentState.last_scene_summary}
@@ -94,7 +98,7 @@ Player Action: ${action}
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3.1-pro-preview",
-      contents: [{ role: 'user', parts: [{ text: context }] }],
+      contents: [{ role: "user", parts: [{ text: context }] }],
       config: {
         systemInstruction: SYSTEM_PROMPT_HEADER,
         responseMimeType: "application/json",
@@ -109,9 +113,13 @@ Player Action: ${action}
   }
 }
 
-export async function generateSpeech(apiKey: string, text: string, voice: string = 'Kore') {
+export async function generateSpeech(
+  apiKey: string,
+  text: string,
+  voice: string = "Kore",
+) {
   const ai = new GoogleGenAI({ apiKey });
-  
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-tts-preview",
@@ -126,7 +134,8 @@ export async function generateSpeech(apiKey: string, text: string, voice: string
       },
     });
 
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    const base64Audio =
+      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     return base64Audio;
   } catch (error) {
     console.error("Gemini TTS Error:", error);
@@ -144,9 +153,84 @@ export interface QuickStartCharacter {
   talents: string[];
 }
 
-export async function generatePrebuiltCharacters(apiKey: string): Promise<QuickStartCharacter[]> {
+const FALLBACK_CHARACTERS: QuickStartCharacter[] = [
+  {
+    name: "Kaelen Voss",
+    archetype: "Hive Ganger",
+    backstory:
+      "Born in the sumps of Necromunda, Kaelen learned early that a blade speaks louder than words. He escaped the underhive after a gang war left him the sole survivor of his crew.",
+    motivation: "Survival",
+    stats: { STR: 3, DEX: 4, TGH: 3, INT: 1, WIL: 2, AWA: 2, INF: 1 },
+    skills: ["Stealth", "Athletics", "Intimidation"],
+    talents: ["Street Survivor"],
+  },
+  {
+    name: "Sister Ignatia",
+    archetype: "Penitent Sister",
+    backstory:
+      "Once a proud Retributor, Ignatia's squad was wiped out due to her tactical hesitation. She now seeks redemption through holy fire and unwavering conviction.",
+    motivation: "Faith",
+    stats: { STR: 2, DEX: 2, TGH: 3, INT: 2, WIL: 5, AWA: 1, INF: 1 },
+    skills: ["Lore", "Medicae", "Intimidation"],
+    talents: ["Tough as Nails"],
+  },
+  {
+    name: "Orellius Tyche",
+    archetype: "Rogue Trader Scion",
+    backstory:
+      "The disgraced third son of a wealthy trading dynasty. Orellius was exiled after a bad deal with a xenos corsair cost the family a lucrative charter.",
+    motivation: "Power",
+    stats: { STR: 1, DEX: 2, TGH: 1, INT: 3, WIL: 3, AWA: 2, INF: 4 },
+    skills: ["Charm", "Barter", "Deception"],
+    talents: ["Silver Tongue"],
+  },
+  {
+    name: "Cade Stryker",
+    archetype: "Guardsman Veteran",
+    backstory:
+      "A hardened survivor of the Cadia's fall. Cade lost his regiment and his home, keeping only his lasgun and a burning hatred for the Ruinous Powers.",
+    motivation: "Vengeance",
+    stats: { STR: 3, DEX: 3, TGH: 4, INT: 2, WIL: 2, AWA: 1, INF: 1 },
+    skills: ["Athletics", "Survival", "Perception"],
+    talents: ["Deadeye"],
+  },
+  {
+    name: "Xerxas-9",
+    archetype: "Tech-Priest Initiate",
+    backstory:
+      "A relatively low-ranking Enginseer who uncovered a dangerous scrapcode fragment. His superiors ordered him executed, forcing him to flee into the fringe sectors.",
+    motivation: "Curiosity",
+    stats: { STR: 2, DEX: 1, TGH: 2, INT: 5, WIL: 4, AWA: 1, INF: 1 },
+    skills: ["Tech-Use", "Lore", "Investigation"],
+    talents: ["Mechanicus Adept"],
+  },
+  {
+    name: "Vaelia",
+    archetype: "Exiled Psyker",
+    backstory:
+      "Vaelia's powers manifested late, and she narrowly escaped the Black Ships. She now lives in hiding, struggling to control the whispers of the Warp.",
+    motivation: "Survival",
+    stats: { STR: 1, DEX: 2, TGH: 1, INT: 3, WIL: 5, AWA: 3, INF: 1 },
+    skills: ["Coercion", "Scrutiny", "Stealth"],
+    talents: ["Intimidating Presence"],
+  },
+];
+
+function getRandomFallbacks(): QuickStartCharacter[] {
+  const shuffled = [...FALLBACK_CHARACTERS].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
+}
+
+export async function generatePrebuiltCharacters(
+  apiKey: string,
+): Promise<QuickStartCharacter[]> {
+  if (!apiKey) {
+    console.log("No API Key, using fallback characters.");
+    return getRandomFallbacks();
+  }
+
   const ai = new GoogleGenAI({ apiKey });
-  
+
   const prompt = `
     Generate exactly 3 unique, diverse Warhammer 40,000 character pre-builds for a solo RPG.
     Each must have:
@@ -168,16 +252,27 @@ export async function generatePrebuiltCharacters(apiKey: string): Promise<QuickS
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3.1-pro-preview",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
       },
     });
 
-    const result = JSON.parse(response.text || "[]");
+    const rawText = response.text || "[]";
+    const cleanText = rawText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+    const result = JSON.parse(cleanText);
+
+    // Safety check just in case the model returns an empty array or bad structure
+    if (!Array.isArray(result) || result.length === 0 || !result[0].name) {
+      throw new Error("Invalid output format from model.");
+    }
+
     return result;
   } catch (error) {
-    console.error("Gemini Pre-build Error:", error);
-    return [];
+    console.error("Gemini Pre-build Error, using fallbacks:", error);
+    return getRandomFallbacks();
   }
 }

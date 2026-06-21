@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>Grim Echoes: 40K Solo RPG</title>
+    <script>
+      // Fallback for process.env in portable builds
+      if (typeof process === 'undefined') {
+        window.process = { env: { NODE_ENV: 'production' } };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

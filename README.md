@@ -87,12 +87,20 @@ To run the game in a web browser for development or quick play:
 3.  **Access**: Open `http://localhost:3000` in your browser.
 
 ### 📦 Universal Applet (Single HTML File)
-You can build the entire game into a single, portable HTML file that runs anywhere without a server:
+You can build the entire game into a single, portable HTML file that runs anywhere without a server. This is the default build mode.
 
 ```bash
-npm run build:singlefile
+# Optional: Bake your API key into the file
+export GEMINI_API_KEY="your_key_here"
+
+npm run build
 ```
-The resulting `dist/index.html` is a "universal applet" containing all styles, scripts, and assets.
+The resulting `dist/index.html` is a "universal applet". 
+
+**Note on Connection:**
+If you see "The Warp interferes with your connection" error:
+1.  **Enter API Key**: Open the **Settings** menu in the app and paste your Gemini API key.
+2.  **CORS/Browser Restrictions**: Ensure your browser allows network requests from local files. Some browsers (like Chrome) may require a flag or extension to allow local files to reach the Google AI API, though standard HTTPS usually works.
 
 ---
 

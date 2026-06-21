@@ -1,10 +1,10 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Settings } from '../types/game';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { Settings } from "../types/game";
 
 interface SettingsState extends Settings {
   setApiKey: (key: string) => void;
-  setTheme: (theme: Settings['theme']) => void;
+  setTheme: (theme: Settings["theme"]) => void;
   setFontSize: (size: number) => void;
   setFontFamily: (family: string) => void;
   setAudioEnabled: (enabled: boolean) => void;
@@ -14,12 +14,17 @@ interface SettingsState extends Settings {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      apiKey: '',
-      theme: 'grimdark',
+      apiKey:
+        typeof process !== "undefined" &&
+        process.env &&
+        process.env.GEMINI_API_KEY
+          ? process.env.GEMINI_API_KEY
+          : "",
+      theme: "grimdark",
       fontSize: 16,
-      fontFamily: 'Inter',
+      fontFamily: "Inter",
       audioEnabled: false,
-      narratorVoice: 'Kore',
+      narratorVoice: "Kore",
       setApiKey: (apiKey) => set({ apiKey }),
       setTheme: (theme) => set({ theme }),
       setFontSize: (fontSize) => set({ fontSize }),
@@ -28,7 +33,7 @@ export const useSettingsStore = create<SettingsState>()(
       setNarratorVoice: (narratorVoice) => set({ narratorVoice }),
     }),
     {
-      name: 'grim-echoes-settings',
-    }
-  )
+      name: "grim-echoes-settings",
+    },
+  ),
 );

@@ -71,34 +71,41 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             className="flex-1 flex flex-col items-center justify-center p-8"
           >
-            <div className="mb-12 text-center">
+            <div className="mb-12 text-center bg-card/60 backdrop-blur-md p-8 rounded-xl border border-border/50 shadow-2xl gothic-border w-fit relative mx-auto">
+              <div className="gothic-corner-tl" />
+              <div className="gothic-corner-tr" />
+              <div className="gothic-corner-bl" />
+              <div className="gothic-corner-br" />
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, type: 'spring' }}
                 className="inline-block mb-4"
               >
-                <Skull className="w-24 h-24 text-primary" />
+                <Skull className="w-24 h-24 text-primary drop-shadow-md" />
               </motion.div>
               <h1 className="text-6xl font-bold tracking-tighter parchment-text mb-2">
                 GRIM ECHOES
               </h1>
-              <p className="text-xl text-muted-foreground tracking-widest uppercase">
-                40K Solo Narrative RPG
+              <p className="text-xl text-foreground font-bold tracking-widest uppercase">
+                40K Epic Narrative RPG
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
-              <MenuButton icon={<Play size={18} />} label="New Game" onClick={() => setView('wizard')} primary />
-              <MenuButton icon={<FolderOpen size={18} />} label="Load Game" onClick={() => setView('load')} />
+            <div className="grid grid-cols-1 gap-4 w-full max-w-xs bg-card/80 backdrop-blur-md p-6 rounded-xl border border-border/50 shadow-xl gothic-border relative">
+              <div className="gothic-corner-tl" />
+              <div className="gothic-corner-tr" />
+              <div className="gothic-corner-bl" />
+              <div className="gothic-corner-br" />
+              <MenuButton icon={<Play size={18} />} label="New Deployment" onClick={() => setView('wizard')} primary />
+              <MenuButton icon={<FolderOpen size={18} />} label="Load Dataslate" onClick={() => setView('load')} />
               <MenuButton icon={<Settings size={18} />} label="Settings" onClick={() => setView('settings')} />
-              <MenuButton icon={<Share2 size={18} />} label="Share Game" onClick={handleShare} />
-              <MenuButton icon={<RefreshCw size={18} />} label="Check for Updates" onClick={() => {}} />
+              <MenuButton icon={<Share2 size={18} />} label="Share Link" onClick={handleShare} />
               <MenuButton icon={<X size={18} />} label="Exit" onClick={() => {}} />
             </div>
 
-            <div className="mt-12 text-xs text-muted-foreground opacity-50 uppercase tracking-tighter">
-              In the grim darkness of the far future, there is only war.
+            <div className="mt-12 text-xs text-foreground font-semibold opacity-70 uppercase tracking-tighter max-w-lg text-center bg-card/40 backdrop-blur-sm p-3 rounded">
+              "Amidst the towering gothic ruins and fire-scorched skies, the Emperor's Angels wage eternal war. In the grim darkness of the far future, there is only war."
             </div>
           </motion.div>
         )}

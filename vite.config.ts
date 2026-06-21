@@ -8,14 +8,18 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
-  const isSingleFile = env.VITE_SINGLEFILE === 'true';
+  
+  // Use Single File mode for web builds unless running Electron packaging
+  const isElectron = process.env.ELECTRON === 'true';
+  const isSingleFile = !isElectron;
 
   return {
+    base: './',
     plugins: [
       react(), 
       tailwindcss(),
       ...(isSingleFile ? [viteSingleFile()] : []),
-      ...(process.env.ELECTRON === 'true' && process.env.DISABLE_HMR !== 'true' ? [
+      ...(isElectron && process.env.DISABLE_HMR !== 'true' ? [
         electron([
           {
             entry: 'electron/main.ts',
@@ -28,7 +32,8 @@ export default defineConfig(({mode}) => {
       ] : []),
     ],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ""),
+      'process.env.NODE_ENV': JSON.stringify(mode),
     },
     resolve: {
       alias: {
@@ -38,6 +43,13 @@ export default defineConfig(({mode}) => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      assetsInlineLimit: 100000000, // Inline everything
+      chunkSizeWarningLimit: 100000000,
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+        },
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
