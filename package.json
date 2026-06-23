@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "build:android": "CAPACITOR=true vite build && npx cap sync android",
     "build:electron": "ELECTRON=true vite build && electron-builder",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-electron",
@@ -35,6 +36,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@fontsource-variable/geist": "^5.2.8",
     "@google/genai": "^1.29.0",
     "class-variance-authority": "^0.7.1",

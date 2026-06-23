@@ -9,9 +9,10 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   
-  // Use Single File mode for web builds unless running Electron packaging
   const isElectron = process.env.ELECTRON === 'true';
-  const isSingleFile = !isElectron;
+  const isCapacitor = process.env.CAPACITOR === 'true';
+  // Single file only for plain web builds — Capacitor and Electron need real file trees
+  const isSingleFile = !isElectron && !isCapacitor;
 
   return {
     base: './',

@@ -1,0 +1,87 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        run: ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci
+
+      - name: Build web assets for Android
+        run: CAPACITOR=true npx vite build
+
+      - name: Add Android platform
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare release artifact
+        run: |
+          mkdir -p release-artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             release-artifacts/grim-echoes-40k-build${{ github.run_number }}.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: grim-echoes-apk-build${{ github.run_number }}
+          path: release-artifacts/grim-echoes-40k-build${{ github.run_number }}.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Grim Echoes: 40K — Build ${{ github.run_number }}"
+          body: |
+            ## Grim Echoes: 40K Solo RPG
+
+            **Debug APK** — sideload or install via Obtainium.
+
+            > On your phone: Settings → Apps → Install unknown apps → allow your file manager or browser.
+
+            **Obtainium setup:** Add repository `admirolltodd/gemini-s-labrynth` and track latest release.
+
+            **First launch:** Open Settings in-app and enter your Gemini API key. Saved permanently after that.
+          files: release-artifacts/grim-echoes-40k-build${{ github.run_number }}.apk
+          prerelease: false
+          make_latest: true

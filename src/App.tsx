@@ -3,7 +3,7 @@ import { useGameStore } from './store/useGameStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { Skull, Settings, Play, FolderOpen, Share2, RefreshCw, X } from 'lucide-react';
+import { Skull, Settings, Play, FolderOpen, Share2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -14,11 +14,9 @@ import LoadGameMenu from './components/menu/LoadGameMenu';
 import { cn } from '@/lib/utils';
 
 export default function App() {
-  const { 
-    theme, fontSize, fontFamily, apiKey, 
-    audioEnabled, narratorVoice, 
-    setApiKey, setTheme, setFontSize, setFontFamily, 
-    setAudioEnabled, setNarratorVoice 
+  const {
+    theme, fontSize, fontFamily, apiKey,
+    setApiKey, setTheme, setFontSize, setFontFamily,
   } = useSettingsStore();
   const [view, setView] = useState<'menu' | 'wizard' | 'game' | 'settings' | 'load'>('menu');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -69,9 +67,9 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="flex-1 flex flex-col items-center justify-center p-8"
+            className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8"
           >
-            <div className="mb-12 text-center bg-card/60 backdrop-blur-md p-8 rounded-xl border border-border/50 shadow-2xl gothic-border w-fit relative mx-auto">
+            <div className="mb-8 text-center bg-card/60 backdrop-blur-md p-6 sm:p-8 rounded-xl border border-border/50 shadow-2xl gothic-border w-fit relative mx-auto">
               <div className="gothic-corner-tl" />
               <div className="gothic-corner-tr" />
               <div className="gothic-corner-bl" />
@@ -82,17 +80,17 @@ export default function App() {
                 transition={{ delay: 0.2, type: 'spring' }}
                 className="inline-block mb-4"
               >
-                <Skull className="w-24 h-24 text-primary drop-shadow-md" />
+                <Skull className="w-16 h-16 sm:w-24 sm:h-24 text-primary drop-shadow-md" />
               </motion.div>
-              <h1 className="text-6xl font-bold tracking-tighter parchment-text mb-2">
+              <h1 className="text-4xl sm:text-6xl font-bold tracking-tighter parchment-text mb-2">
                 GRIM ECHOES
               </h1>
-              <p className="text-xl text-foreground font-bold tracking-widest uppercase">
+              <p className="text-base sm:text-xl text-foreground font-bold tracking-widest uppercase">
                 40K Epic Narrative RPG
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 w-full max-w-xs bg-card/80 backdrop-blur-md p-6 rounded-xl border border-border/50 shadow-xl gothic-border relative">
+            <div className="grid grid-cols-1 gap-3 w-full max-w-xs bg-card/80 backdrop-blur-md p-5 rounded-xl border border-border/50 shadow-xl gothic-border relative">
               <div className="gothic-corner-tl" />
               <div className="gothic-corner-tr" />
               <div className="gothic-corner-bl" />
@@ -100,11 +98,10 @@ export default function App() {
               <MenuButton icon={<Play size={18} />} label="New Deployment" onClick={() => setView('wizard')} primary />
               <MenuButton icon={<FolderOpen size={18} />} label="Load Dataslate" onClick={() => setView('load')} />
               <MenuButton icon={<Settings size={18} />} label="Settings" onClick={() => setView('settings')} />
-              <MenuButton icon={<Share2 size={18} />} label="Share Link" onClick={handleShare} />
-              <MenuButton icon={<X size={18} />} label="Exit" onClick={() => {}} />
+              <MenuButton icon={<Share2 size={18} />} label="Share Dataslate" onClick={handleShare} />
             </div>
 
-            <div className="mt-12 text-xs text-foreground font-semibold opacity-70 uppercase tracking-tighter max-w-lg text-center bg-card/40 backdrop-blur-sm p-3 rounded">
+            <div className="mt-6 text-xs text-foreground font-semibold opacity-70 uppercase tracking-tighter max-w-lg text-center bg-card/40 backdrop-blur-sm p-3 rounded">
               "Amidst the towering gothic ruins and fire-scorched skies, the Emperor's Angels wage eternal war. In the grim darkness of the far future, there is only war."
             </div>
           </motion.div>
@@ -134,9 +131,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="flex-1 flex items-center justify-center p-8"
+            className="flex-1 flex items-start sm:items-center justify-center p-4 sm:p-8 overflow-y-auto"
           >
-            <Card className="w-full max-w-2xl bg-card border-border">
+            <Card className="w-full max-w-2xl bg-card border-border my-auto">
               <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
                 <CardTitle className="text-2xl parchment-text">Imperial Archives: Settings</CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setView('menu')}>
@@ -188,38 +185,6 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold parchment-text uppercase">Vox-Array Narrative (TTS)</h4>
-                      <p className="text-xs text-muted-foreground">Enable audio read-aloud for narrative and dialogues.</p>
-                    </div>
-                    <Button 
-                      variant={audioEnabled ? "default" : "outline"}
-                      className={cn("w-24 uppercase tracking-[0.2em] text-[10px]", audioEnabled && "bg-primary text-white")}
-                      onClick={() => setAudioEnabled(!audioEnabled)}
-                    >
-                      {audioEnabled ? 'Active' : 'Disabled'}
-                    </Button>
-                  </div>
-                </div>
-
-                {audioEnabled && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Narrator Vox-Profile</label>
-                    <select 
-                      className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm outline-none"
-                      value={narratorVoice}
-                      onChange={(e) => setNarratorVoice(e.target.value)}
-                    >
-                      <option value="Kore">Kore (Balanced)</option>
-                      <option value="Puck">Puck (Agile)</option>
-                      <option value="Charon">Charon (Ancient)</option>
-                      <option value="Fenrir">Fenrir (Combat)</option>
-                      <option value="Zephyr">Zephyr (Ethereal)</option>
-                    </select>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </motion.div>
