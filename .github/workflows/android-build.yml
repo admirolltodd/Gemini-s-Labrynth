@@ -36,19 +36,29 @@ jobs:
       - name: Install npm dependencies
         run: ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci
 
+      - name: Verify Capacitor CLI
+        run: |
+          echo "=== node_modules/.bin/cap ==="
+          ls -la node_modules/.bin/cap || echo "cap NOT found in .bin"
+          echo "=== cap version ==="
+          ./node_modules/.bin/cap --version || echo "cap --version failed"
+          echo "=== capacitor.config.json ==="
+          cat capacitor.config.json
+
       - name: Build web assets for Android
-        run: CAPACITOR=true npx vite build
+        run: CAPACITOR=true ./node_modules/.bin/vite build
 
       - name: Add Android platform
         run: |
           if [ ! -d "android" ]; then
-            npx cap add android 2>&1
+            echo "Running: cap add android"
+            ./node_modules/.bin/cap add android
           else
             echo "android/ already exists, skipping cap add"
           fi
 
       - name: Sync Capacitor
-        run: npx cap sync android 2>&1
+        run: ./node_modules/.bin/cap sync android
 
       - name: Make Gradle executable
         run: chmod +x android/gradlew
