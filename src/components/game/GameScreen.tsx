@@ -45,6 +45,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const [loadingPhrase, setLoadingPhrase] = useState("Consulting the Imperial Tarot...");
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevLoyalty = useRef(game.companion.loyalty);
+  const initialActionsRan = useRef(false);
 
   const LOADING_PHRASES = [
     "Vox-casting orbital command...",
@@ -64,13 +65,15 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   }, [game.history, isThinking]);
 
   useEffect(() => {
-    if (!game.portrait && apiKey) generatePortrait();
-    if (game.history.length === 0 && apiKey) {
+    if (!apiKey || initialActionsRan.current) return;
+    initialActionsRan.current = true;
+    if (!game.portrait) generatePortrait();
+    if (game.history.length === 0) {
       handleAction(
         "Describe my insertion into the active warzone. Establish an epic, vast scale with towering ruins, dramatic lighting over the battlefield, and the chaotic roar of war. Give me tactical options.",
       );
     }
-  }, []);
+  }, [apiKey]);
 
   useEffect(() => {
     if (game.companion.loyalty !== prevLoyalty.current) {

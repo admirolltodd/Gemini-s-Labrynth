@@ -20,8 +20,9 @@ export default function App() {
   } = useSettingsStore();
   const [view, setView] = useState<'menu' | 'wizard' | 'game' | 'settings' | 'load'>('menu');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [draftApiKey, setDraftApiKey] = useState('');
+  const [draftApiKey, setDraftApiKey] = useState(apiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [noKeyWarning, setNoKeyWarning] = useState(false);
 
   useEffect(() => {
     const isDark = theme === 'dark' || theme === 'grimdark';
@@ -92,13 +93,24 @@ export default function App() {
               </p>
             </div>
 
+            {noKeyWarning && (
+              <div className="w-full max-w-xs mb-2 px-4 py-2 rounded-lg border border-destructive/50 bg-destructive/10 text-destructive text-xs uppercase tracking-widest text-center font-bold">
+                Vox-Array Key required — open Settings first
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-3 w-full max-w-xs bg-card/80 backdrop-blur-md p-5 rounded-xl border border-border/50 shadow-xl gothic-border relative">
               <div className="gothic-corner-tl" />
               <div className="gothic-corner-tr" />
               <div className="gothic-corner-bl" />
               <div className="gothic-corner-br" />
-              <MenuButton icon={<Play size={18} />} label="New Deployment" onClick={() => setView('wizard')} primary />
-              <MenuButton icon={<FolderOpen size={18} />} label="Load Dataslate" onClick={() => setView('load')} />
+              <MenuButton icon={<Play size={18} />} label="New Deployment" onClick={() => {
+                if (!apiKey) { setNoKeyWarning(true); setTimeout(() => setNoKeyWarning(false), 3000); return; }
+                setView('wizard');
+              }} primary />
+              <MenuButton icon={<FolderOpen size={18} />} label="Load Dataslate" onClick={() => {
+                if (!apiKey) { setNoKeyWarning(true); setTimeout(() => setNoKeyWarning(false), 3000); return; }
+                setView('load');
+              }} />
               <MenuButton icon={<Settings size={18} />} label="Settings" onClick={() => setView('settings')} />
               <MenuButton icon={<Share2 size={18} />} label="Share Dataslate" onClick={handleShare} />
             </div>
@@ -133,7 +145,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            onAnimationComplete={() => { setDraftApiKey(apiKey); setApiKeySaved(false); }}
+            onAnimationComplete={() => { if (!draftApiKey) setDraftApiKey(apiKey); setApiKeySaved(false); }}
             className="flex-1 flex items-start sm:items-center justify-center p-4 sm:p-8 overflow-y-auto"
           >
             <Card className="w-full max-w-2xl bg-card border-border my-auto">
