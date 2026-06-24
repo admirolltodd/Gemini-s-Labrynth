@@ -20,6 +20,8 @@ export default function App() {
   } = useSettingsStore();
   const [view, setView] = useState<'menu' | 'wizard' | 'game' | 'settings' | 'load'>('menu');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [draftApiKey, setDraftApiKey] = useState('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
 
   useEffect(() => {
     const isDark = theme === 'dark' || theme === 'grimdark';
@@ -122,7 +124,7 @@ export default function App() {
         )}
 
         {view === 'game' && (
-          <GameScreen key="game" />
+          <GameScreen key="game" onBack={() => setView('menu')} />
         )}
 
         {view === 'settings' && (
@@ -131,6 +133,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
+            onAnimationComplete={() => { setDraftApiKey(apiKey); setApiKeySaved(false); }}
             className="flex-1 flex items-start sm:items-center justify-center p-4 sm:p-8 overflow-y-auto"
           >
             <Card className="w-full max-w-2xl bg-card border-border my-auto">
@@ -152,13 +155,31 @@ export default function App() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Vox-Array Key (Gemini API)</label>
-                  <input 
-                    type="password" 
-                    className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="Enter your API key..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
+                  {apiKey && !apiKeySaved && (
+                    <p className="text-[10px] text-primary uppercase tracking-widest">Key active — paste a new one to replace it</p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      className="flex-1 bg-secondary border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none"
+                      placeholder={apiKey ? "••••••••••••••••" : "Paste your Gemini API key..."}
+                      value={draftApiKey}
+                      onChange={(e) => { setDraftApiKey(e.target.value); setApiKeySaved(false); }}
+                    />
+                    <Button
+                      variant={apiKeySaved ? "default" : "outline"}
+                      className={cn("shrink-0 uppercase text-xs tracking-widest", apiKeySaved && "bg-primary text-white")}
+                      onClick={() => {
+                        if (draftApiKey.trim()) {
+                          setApiKey(draftApiKey.trim());
+                          setApiKeySaved(true);
+                        }
+                      }}
+                      disabled={!draftApiKey.trim() || apiKeySaved}
+                    >
+                      {apiKeySaved ? "Saved ✓" : "Save Key"}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

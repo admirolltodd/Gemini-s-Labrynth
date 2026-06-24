@@ -18,6 +18,8 @@ import {
   MessageSquare,
   Loader2,
   Cpu,
+  ChevronLeft,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -27,13 +29,14 @@ import CompanionPanel from "./CompanionPanel";
 import SkillsPanel from "./SkillsPanel";
 import TacticalMap from "./TacticalMap";
 
-export default function GameScreen() {
+export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const game = useGameStore();
   const { apiKey } = useSettingsStore();
 
   const [input, setInput] = useState("");
   const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(!game.portrait);
   const [isThinking, setIsThinking] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
@@ -151,12 +154,13 @@ export default function GameScreen() {
           : null,
       });
     } catch (error) {
+      const errDetail = error instanceof Error ? error.message : String(error);
       game.addHistory({
         role: "ai",
         content:
           error instanceof Error && error.message.startsWith("VOX-LINK")
             ? error.message
-            : "The Warp interferes with your connection. (Error processing turn)",
+            : `The Warp interferes with your connection. (${errDetail})`,
       });
     } finally {
       setIsThinking(false);
@@ -169,6 +173,8 @@ export default function GameScreen() {
       "Unnamed_Operative";
     try {
       await game.saveGame(name);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
     } catch (e) {
       console.error("Save failed:", e);
     }
@@ -209,6 +215,16 @@ export default function GameScreen() {
       {/* ── Top Bar ── */}
       <div className="h-12 border-b border-border flex items-center justify-between px-3 sm:px-6 bg-card/30 backdrop-blur-sm z-10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground -ml-1 mr-1"
+            >
+              <ChevronLeft size={16} />
+            </Button>
+          )}
           <Skull className="text-primary w-4 h-4 shrink-0" />
           <span className="text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.3em] font-bold parchment-text truncate">
             {game.chapter || "Chapter I: The Awakening"}
@@ -218,10 +234,15 @@ export default function GameScreen() {
           variant="outline"
           size="sm"
           onClick={handleSave}
-          className="h-7 gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest border-primary/30 hover:bg-primary/10 shrink-0 ml-2"
+          className={cn(
+            "h-7 gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0 ml-2 transition-all",
+            isSaved
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-primary/30 hover:bg-primary/10"
+          )}
         >
-          <Save size={12} />
-          <span className="hidden sm:inline">Save Game</span>
+          {isSaved ? <Check size={12} /> : <Save size={12} />}
+          <span className="hidden sm:inline">{isSaved ? "Saved!" : "Save Game"}</span>
         </Button>
       </div>
 
