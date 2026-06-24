@@ -16,7 +16,7 @@
     "lint": "tsc --noEmit"
   },
   "build": {
-    "appId": "com.grimechoes.40k",
+    "appId": "com.grimechoes.wh40k",
     "productName": "Grim Echoes: 40K Solo",
     "files": [
       "dist",
