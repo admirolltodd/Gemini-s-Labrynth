@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Zap, Star, TrendingUp, Coins, Skull } from 'lucide-react';
+import { X, Zap, Star, TrendingUp, Coins, Skull, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 interface SkillsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onAction?: (action: string) => void;
 }
 
 const TALENT_DESCRIPTIONS: Record<string, string> = {
@@ -30,13 +31,25 @@ const STAT_LABELS: Record<string, string> = {
   INT: 'Intellect', WIL: 'Willpower', AWA: 'Awareness', INF: 'Influence',
 };
 
-export default function SkillsPanel({ isOpen, onClose }: SkillsPanelProps) {
-  const { skills, talents, xp, credits, corruption, stats } = useGameStore();
+export default function SkillsPanel({ isOpen, onClose, onAction }: SkillsPanelProps) {
+  const game = useGameStore();
+  const { skills, talents, xp, credits, corruption, stats, setGameState } = game;
 
   const corruptionColor =
     corruption >= 8 ? 'text-destructive' :
     corruption >= 5 ? 'text-amber-500' :
     'text-muted-foreground';
+
+  const handleSpendXp = (statKey: string, currentVal: number) => {
+    const newVal = currentVal + 1;
+    const cost = newVal * 3;
+    setGameState({
+      stats: { ...stats, [statKey]: newVal },
+      xp: { ...xp, unspent: xp.unspent - cost },
+    });
+    onAction?.(`I spend ${cost} XP raising my ${STAT_LABELS[statKey]} from ${currentVal} to ${newVal}. Narrate this advancement briefly — a single powerful sentence describing what changed in my body or mind.`);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -91,6 +104,45 @@ export default function SkillsPanel({ isOpen, onClose }: SkillsPanelProps) {
                   ))}
                 </div>
               </div>
+
+              {/* XP Spend */}
+              {xp.unspent > 0 && onAction && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] uppercase tracking-widest text-primary font-bold flex items-center gap-1">
+                      <ChevronUp size={12} /> Spend XP
+                    </div>
+                    <Badge variant="outline" className="text-[9px] border-primary/40 text-primary bg-primary/10">
+                      {xp.unspent} available
+                    </Badge>
+                  </div>
+                  <div className="space-y-1.5">
+                    {Object.entries(stats).map(([key, val]) => {
+                      const cost = (val + 1) * 3;
+                      const canAfford = xp.unspent >= cost;
+                      return (
+                        <div key={key} className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
+                          <span className="text-xs text-muted-foreground">
+                            {STAT_LABELS[key]} <span className="text-foreground font-mono font-bold">{val}→{val + 1}</span>
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!canAfford}
+                            onClick={() => handleSpendXp(key, val)}
+                            className={cn(
+                              "h-6 px-2 text-[9px] uppercase tracking-widest",
+                              canAfford && "border-primary/40 text-primary hover:bg-primary hover:text-white"
+                            )}
+                          >
+                            {cost} XP
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Skills */}
               <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useGameStore } from "../../store/useGameStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { Button } from "../ui/button";
@@ -10,7 +10,6 @@ import {
   Save,
   Package,
   Zap,
-  Map as MapIcon,
   Send,
   Heart,
   Users,
@@ -27,20 +26,18 @@ import { processGameTurn } from "../../lib/gemini";
 import InventoryPanel from "./InventoryPanel";
 import CompanionPanel from "./CompanionPanel";
 import SkillsPanel from "./SkillsPanel";
-import TacticalMap from "./TacticalMap";
 
 export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const game = useGameStore();
   const { apiKey } = useSettingsStore();
 
   const [input, setInput] = useState("");
-  const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(!game.portrait);
+  const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
-  const [isMapOpen, setIsMapOpen] = useState(false);
   const [loyaltyMessage, setLoyaltyMessage] = useState<{ value: number; label: string } | null>(null);
   const [loadingPhrase, setLoadingPhrase] = useState("Consulting the Imperial Tarot...");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,6 +54,16 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     "Translating Noospheric battle echoes...",
   ];
 
+  // Derive the latest choices from history for the pinned panel
+  const latestChoices = useMemo(() => {
+    for (let i = game.history.length - 1; i >= 0; i--) {
+      if (game.history[i].role === "ai" && game.history[i].choices) {
+        return game.history[i].choices as Record<string, string>;
+      }
+    }
+    return null;
+  }, [game.history]);
+
   useEffect(() => {
     if (scrollRef.current) {
       const el = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]");
@@ -71,6 +78,11 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     if (game.history.length === 0) {
       handleAction(
         "Describe my insertion into the active warzone. Establish an epic, vast scale with towering ruins, dramatic lighting over the battlefield, and the chaotic roar of war. Give me tactical options.",
+      );
+    } else {
+      // Loaded game — brief the player on where they left off
+      handleAction(
+        "Provide a brief Cogitator Briefing: 2 sentences recapping recent events and current tactical situation. Then give me 4 fresh tactical options.",
       );
     }
   }, [apiKey]);
@@ -105,7 +117,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         }
       }
     } catch {
-      // non-critical, fail silently
+      // non-critical
     } finally {
       setIsGeneratingPortrait(false);
     }
@@ -308,32 +320,6 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                         </p>
                       </motion.div>
                     )}
-                    {msg.choices && (
-                      <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4 w-full">
-                        {Object.entries(msg.choices).map(([key, value]) => (
-                          <Button
-                            key={key}
-                            variant="outline"
-                            disabled={isThinking}
-                            className="w-full flex items-start justify-start text-left h-auto py-3 sm:py-4 px-4 sm:px-5 border-border/80 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group relative overflow-hidden whitespace-normal break-words"
-                            onClick={() => handleAction(value)}
-                          >
-                            <div className="flex gap-3 sm:gap-4 w-full pr-5">
-                              <Badge
-                                variant="outline"
-                                className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 uppercase font-bold tracking-widest text-[9px] sm:text-[10px] items-center justify-center h-5 sm:h-6 w-8 sm:w-10 ring-1 ring-primary/20 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all"
-                              >
-                                {key}
-                              </Badge>
-                              <span className="text-xs sm:text-sm font-medium leading-relaxed opacity-85 group-hover:opacity-100 flex-1">
-                                {value}
-                              </span>
-                            </div>
-                            <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all text-primary w-4 h-4" />
-                          </Button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="bg-primary/20 border border-primary/30 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium text-primary shadow-sm max-w-[90%]">
@@ -386,9 +372,47 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         </ScrollArea>
       </div>
 
+      {/* ── Pinned Choices ── */}
+      <AnimatePresence>
+        {(latestChoices || isThinking) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="border-t border-border/50 bg-card/80 backdrop-blur-md shrink-0 px-3 py-2 sm:px-6 sm:py-3"
+          >
+            <div className="max-w-3xl mx-auto grid grid-cols-2 gap-1.5 sm:gap-2">
+              {isThinking
+                ? ["A", "B", "C", "D"].map((k) => (
+                    <div key={k} className="h-10 sm:h-11 rounded-md border border-border/40 bg-secondary/30 animate-pulse" />
+                  ))
+                : latestChoices && Object.entries(latestChoices).map(([key, value]) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      disabled={isThinking}
+                      className="w-full h-auto min-h-10 py-2 px-3 text-left flex items-start gap-2 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal break-words"
+                      onClick={() => handleAction(value)}
+                    >
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[9px] h-5 w-6 items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                      >
+                        {key}
+                      </Badge>
+                      <span className="text-[10px] sm:text-xs font-medium leading-tight opacity-85 group-hover:opacity-100 flex-1">
+                        {value}
+                      </span>
+                    </Button>
+                  ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Input Area ── */}
-      <div className="p-2 sm:p-4 border-t border-border bg-card/50 backdrop-blur-md shrink-0">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-2">
+      <div className="p-2 sm:p-3 border-t border-border bg-card/50 backdrop-blur-md shrink-0">
+        <div className="max-w-4xl mx-auto flex gap-2">
           <div className="flex-1 relative">
             <input
               type="text"
@@ -396,7 +420,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
               disabled={isThinking}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAction(input)}
-              placeholder={isThinking ? "Waiting for the Warp..." : "Type your action..."}
+              placeholder={isThinking ? "Waiting for the Warp..." : "Or type a custom action..."}
               className="w-full bg-secondary/50 border border-border rounded-lg pl-4 pr-11 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none disabled:opacity-50"
             />
             <Button
@@ -409,12 +433,10 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
               <Send size={16} />
             </Button>
           </div>
-          {/* 4-across on mobile, row on desktop */}
-          <div className="grid grid-cols-4 sm:flex gap-1.5 sm:gap-2">
+          <div className="flex gap-1.5">
             <ActionButton icon={<Package size={16} />} label="Inventory" onClick={() => setIsInventoryOpen(true)} />
             <ActionButton icon={<Users size={16} />} label="Companion" onClick={() => setIsCompanionOpen(true)} />
             <ActionButton icon={<Zap size={16} />} label="Dossier" onClick={() => setIsSkillsOpen(true)} />
-            <ActionButton icon={<MapIcon size={16} />} label="Tactical" onClick={() => setIsMapOpen(true)} />
           </div>
         </div>
       </div>
@@ -422,48 +444,36 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
       {/* ── HUD ── */}
       <div className="border-t border-border bg-background/90 backdrop-blur-md z-20 shrink-0">
 
-        {/* Mobile HUD */}
-        <div className="sm:hidden">
-          <div className="flex items-center px-3 pt-2 pb-1 gap-3">
-            <div className="relative w-9 h-9 border-2 border-primary rounded-md overflow-hidden bg-card shrink-0">
-              {isGeneratingPortrait ? (
-                <div className="w-full h-full flex items-center justify-center bg-secondary">
-                  <Loader2 className="animate-spin text-primary w-3 h-3" />
-                </div>
-              ) : game.portrait ? (
-                <img src={game.portrait} alt="Portrait" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-secondary">
-                  <Skull className="text-primary/40 w-4 h-4" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between gap-1">
-                <span className="text-xs font-bold parchment-text uppercase truncate">{operativeName}</span>
-                <span className={cn("text-xs font-bold font-mono shrink-0 flex items-center gap-0.5", hpColor)}>
-                  <Heart size={9} /> {game.hp.current}/{game.hp.max}
-                </span>
+        {/* Mobile HUD — compact single row */}
+        <div className="sm:hidden flex items-center px-3 py-2 gap-3">
+          <div className="relative w-8 h-8 border-2 border-primary rounded-md overflow-hidden bg-card shrink-0">
+            {isGeneratingPortrait ? (
+              <div className="w-full h-full flex items-center justify-center bg-secondary">
+                <Loader2 className="animate-spin text-primary w-3 h-3" />
               </div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-tighter">
-                {game.archetype} · XP {game.xp.total}
+            ) : game.portrait ? (
+              <img src={game.portrait} alt="Portrait" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-secondary">
+                <Skull className="text-primary/40 w-3 h-3" />
               </div>
-            </div>
+            )}
           </div>
-          {/* Scrollable stat strip */}
-          <div className="overflow-x-auto px-3 pb-2">
-            <div className="flex gap-4 min-w-max">
-              {Object.entries(game.stats).map(([key, val]) => (
-                <div key={key} className="flex flex-col items-center">
-                  <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">{key}</div>
-                  <div className="text-xs font-bold font-mono">{val}</div>
-                </div>
-              ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold parchment-text uppercase truncate">{operativeName}</span>
+              <span className={cn("text-xs font-bold font-mono shrink-0 flex items-center gap-0.5", hpColor)}>
+                <Heart size={9} /> {game.hp.current}/{game.hp.max}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-0.5">
+              <span className="text-[9px] text-muted-foreground uppercase tracking-tighter truncate">
+                {game.archetype} · {game.xp.total} XP{game.xp.unspent > 0 ? ` (${game.xp.unspent} unspent)` : ''}
+              </span>
               {game.companion.name && (
-                <div className="flex flex-col items-center border-l border-border pl-3">
-                  <div className="text-[8px] uppercase tracking-tighter text-muted-foreground">Bond</div>
-                  <div className="text-xs font-bold font-mono text-primary">{game.companion.loyalty}%</div>
-                </div>
+                <span className="text-[9px] text-primary font-mono shrink-0">
+                  Bond {game.companion.loyalty}%
+                </span>
               )}
             </div>
           </div>
@@ -491,7 +501,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
               <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
                 <span>{game.archetype}</span>
                 <Separator orientation="vertical" className="h-3" />
-                <span className="text-primary">XP: {game.xp.total}</span>
+                <span className="text-primary">XP: {game.xp.total}{game.xp.unspent > 0 ? ` (${game.xp.unspent} unspent)` : ''}</span>
               </div>
             </div>
 
@@ -552,8 +562,11 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
       {/* Slide-in Panels */}
       <InventoryPanel isOpen={isInventoryOpen} onClose={() => setIsInventoryOpen(false)} onUseItem={handleUseItem} />
       <CompanionPanel isOpen={isCompanionOpen} onClose={() => setIsCompanionOpen(false)} onInteract={handleCompanionInteract} />
-      <SkillsPanel isOpen={isSkillsOpen} onClose={() => setIsSkillsOpen(false)} />
-      <TacticalMap isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />
+      <SkillsPanel
+        isOpen={isSkillsOpen}
+        onClose={() => setIsSkillsOpen(false)}
+        onAction={(action) => { setIsSkillsOpen(false); handleAction(action); }}
+      />
     </div>
   );
 }
@@ -575,7 +588,7 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
       variant="outline"
       size="icon"
       onClick={onClick}
-      className="h-10 w-full sm:w-10 border-border/50 hover:border-primary/50 hover:bg-primary/5 group relative"
+      className="h-10 w-10 border-border/50 hover:border-primary/50 hover:bg-primary/5 group relative shrink-0"
     >
       {icon}
       <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest border border-border whitespace-nowrap z-50 hidden sm:block">

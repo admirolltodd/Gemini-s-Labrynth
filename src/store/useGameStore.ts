@@ -10,6 +10,33 @@ interface GameStore extends GameState {
   loadGame: (name: string) => Promise<void>;
 }
 
+const SAVES_KEY = 'grim-echoes-saves-v2';
+
+type SaveSlot = GameState & { savedAt: string };
+
+function readSaves(): Record<string, SaveSlot> {
+  try {
+    return JSON.parse(localStorage.getItem(SAVES_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+export function listSaves(): Array<{ name: string; savedAt: string; archetype: string }> {
+  const saves = readSaves();
+  return Object.entries(saves).map(([name, slot]) => ({
+    name,
+    savedAt: slot.savedAt,
+    archetype: slot.archetype,
+  }));
+}
+
+export function deleteSave(name: string): void {
+  const saves = readSaves();
+  delete saves[name];
+  localStorage.setItem(SAVES_KEY, JSON.stringify(saves));
+}
+
 const INITIAL_STATS: Stats = {
   STR: 0, DEX: 0, TGH: 0, INT: 0, WIL: 0, AWA: 0, INF: 0
 };
@@ -44,14 +71,17 @@ export const useGameStore = create<GameStore>()(
       resetGame: () => set(INITIAL_STATE),
       saveGame: async (name) => {
         const state = get();
-        // Extract only the GameState data, not the actions
         const { setGameState, addHistory, resetGame, saveGame, loadGame, ...data } = state;
-        await window.electronAPI.saveGame(`${name}.json`, data);
+        const saves = readSaves();
+        saves[name] = { ...data, savedAt: new Date().toISOString() };
+        localStorage.setItem(SAVES_KEY, JSON.stringify(saves));
       },
       loadGame: async (name) => {
-        const data = await window.electronAPI.loadGame(name);
-        if (data) {
-          set(data);
+        const saves = readSaves();
+        const slot = saves[name];
+        if (slot) {
+          const { savedAt, ...data } = slot;
+          set({ ...INITIAL_STATE, ...data });
         }
       },
     }),
