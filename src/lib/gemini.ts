@@ -46,30 +46,40 @@ RULES:
 8. Criticals: Nat-20 is auto-success + bonus. Nat-1 is auto-fail + complication.
 9. Complications: Use them on failures to keep the story moving.
 
-[WARHAMMER 40,000 SOLO RPG DOCUMENT]
-# WARHAMMER 40,000 SOLO RPG — LLM EDITION v2.0
-◼ GM QUICK REFERENCE
-Core loop: Narrate (2–4 sentences) -> Offer 4 choices -> Roll dice when needed -> STOP.
-Roll format: [ROLL] Action: "" Check: <Stat> + <Bonus> vs DC <Target> Roll: 1d20 + <Bonus> = <Total> → Success / Failure
-Stats: STR / DEX / TGH / INT / WIL / AWA / INF
-HP: 10 + TGH | Skill bonus: +2
-Difficulty Targets:
-| Mode      | Easy | Standard | Hard | Lethal |
-|-----------|------|----------|------|--------|
-| Narrative | 8    | 12       | 16   | 20     |
-| Balanced  | 10   | 14       | 18   | 22     |
-| Grimdark  | 12   | 16       | 20   | 24     |
-
-◼ COMPANION & LOYALTY
-Loyalty (0–100). 80+ Devoted, 60-79 Loyal, 40-59 Neutral, 20-39 Disgruntled, <20 Insubordinate.
-
-◼ TALENTS
-Duelist's Flourish, Relentless Advance, Deadeye, Brutal Swing, Silver Tongue, Intimidating Presence, Black Market Savvy, Mechanicus Adept, Tough as Nails, Street Survivor.
-
-◼ XP & PROGRESSION
-Easy: 5 XP, Standard: 10 XP, Hard: 15 XP, Milestone: 25+ XP.
-Raise Stat: New Value x 3 XP. Skill: 10 XP. Talent: 15 XP.
+[WH40K SOLO RPG v2.0 — MECHANICS REFERENCE]
+Stats: STR/DEX/TGH/INT/WIL/AWA/INF. HP = 10 + TGH. Skill bonus: +2.
+DC by tier (Easy/Standard/Hard/Lethal): Narrative 8/12/16/20 · Balanced 10/14/18/22 · Grimdark 12/16/20/24.
+Loyalty (0-100): 80+ Devoted, 60-79 Loyal, 40-59 Neutral, 20-39 Disgruntled, <20 Insubordinate.
+XP awards: Easy 5, Standard 10, Hard 15, Milestone 25+. Costs: Raise Stat = NewValue×3, Skill 10, Talent 15.
 `;
+
+// How many prior history entries to send as rolling context (≈3 turns).
+const HISTORY_WINDOW = 6;
+
+// Compact one-line stat encoding: "STR:3 DEX:4 TGH:3 ..." (cheaper than JSON.stringify).
+function encodeStats(stats: GameState["stats"]): string {
+  return Object.entries(stats)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(" ");
+}
+
+// Build a short transcript of recent turns so the model has continuity
+// without resending the entire game. Player actions are prefixed with ">".
+function buildRecentHistory(history: GameState["history"]): string {
+  if (!history || history.length === 0) return "";
+  const recent = history.slice(-HISTORY_WINDOW);
+  const lines = recent.map((entry) => {
+    if (entry.role === "user") {
+      return `> ${entry.content}`;
+    }
+    let line = entry.content;
+    if (entry.dialogue && entry.dialogue.text) {
+      line += ` [${entry.dialogue.speaker || "Voice"}: "${entry.dialogue.text}"]`;
+    }
+    return line;
+  });
+  return lines.join("\n");
+}
 
 export async function processGameTurn(
   apiKey: string,
@@ -78,19 +88,21 @@ export async function processGameTurn(
 ) {
   const ai = new GoogleGenAI({ apiKey });
 
+  const recentHistory = buildRecentHistory(currentState.history);
+
   // Construct context
   const context = `
 Current Operative: ${currentState.archetype}
 Difficulty: ${currentState.difficulty}
 Motivation: ${currentState.motivation}
-Stats: ${JSON.stringify(currentState.stats)}
+Stats: ${encodeStats(currentState.stats)}
 HP: ${currentState.hp.current}/${currentState.hp.max}
 Skills: ${currentState.skills.join(", ")}
 Talents: ${currentState.talents.join(", ")}
 Inventory: ${currentState.gear.join(", ")}
 Companion: ${currentState.companion.name} (Loyalty: ${currentState.companion.loyalty})
 Chapter: ${currentState.chapter}
-Last Scene Summary: ${currentState.last_scene_summary}
+${recentHistory ? `\nRecent Events (oldest to newest):\n${recentHistory}` : `Last Scene Summary: ${currentState.last_scene_summary}`}
 
 Player Action: ${action}
   `;

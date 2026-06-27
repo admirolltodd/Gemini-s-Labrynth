@@ -247,7 +247,7 @@ export default function App() {
   );
 }
 
-function OnboardingScreen({ onComplete }: { onComplete: (key: string) => void }) {
+function OnboardingScreen({ onComplete }: { onComplete: (key: string) => void; key?: React.Key }) {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [saved, setSaved] = useState(false);
 

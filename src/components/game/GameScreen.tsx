@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { Stats } from "../../types/game";
 import { processGameTurn } from "../../lib/gemini";
 import InventoryPanel from "./InventoryPanel";
 import CompanionPanel from "./CompanionPanel";
@@ -59,7 +60,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   ];
 
   // Derive the latest choices from history for the pinned panel
-  const latestChoices = useMemo(() => {
+  const latestChoices = useMemo<Record<string, string> | null>(() => {
     for (let i = game.history.length - 1; i >= 0; i--) {
       if (game.history[i].role === "ai" && game.history[i].choices) {
         return game.history[i].choices as Record<string, string>;
@@ -385,7 +386,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                 ? ["A", "B", "C", "D"].map((k) => (
                     <div key={k} className="h-12 rounded-md border border-border/40 bg-secondary/30 animate-pulse" />
                   ))
-                : latestChoices && Object.entries(latestChoices).map(([key, value]) => (
+                : latestChoices && Object.entries(latestChoices).map(([key, value]: [string, string]) => (
                     <Button
                       key={key}
                       variant="outline"
@@ -617,7 +618,7 @@ interface PreGameIntroProps {
   archetype: string;
   motivation: string;
   difficulty: string;
-  stats: Record<string, number>;
+  stats: Stats;
   skills: string[];
   talents: string[];
   onDismiss: () => void;
@@ -817,7 +818,7 @@ function PreGameIntro({ name, archetype, motivation, difficulty, stats, skills, 
   );
 }
 
-function IntroScreen({ children }: { children: React.ReactNode }) {
+function IntroScreen({ children }: { children: React.ReactNode; key?: React.Key }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
