@@ -31,6 +31,9 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const game = useGameStore();
   const { apiKey } = useSettingsStore();
 
+  // Show NES-style intro for new games only (no history yet)
+  const [showIntro, setShowIntro] = useState(() => game.history.length === 0);
+
   const [input, setInput] = useState("");
   const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -72,7 +75,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   }, [game.history, isThinking]);
 
   useEffect(() => {
-    if (!apiKey || initialActionsRan.current) return;
+    if (!apiKey || initialActionsRan.current || showIntro) return;
     initialActionsRan.current = true;
     if (!game.portrait) generatePortrait();
     if (game.history.length === 0) {
@@ -87,7 +90,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         true,
       );
     }
-  }, [apiKey]);
+  }, [apiKey, showIntro]);
 
   useEffect(() => {
     if (game.companion.loyalty !== prevLoyalty.current) {
@@ -566,7 +569,317 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         onClose={() => setIsSkillsOpen(false)}
         onAction={(action) => { setIsSkillsOpen(false); handleAction(action, true); }}
       />
+
+      {/* NES-style intro overlay */}
+      <AnimatePresence>
+        {showIntro && (
+          <PreGameIntro
+            name={game.name}
+            archetype={game.archetype}
+            motivation={game.motivation}
+            difficulty={game.difficulty}
+            stats={game.stats}
+            skills={game.skills}
+            talents={game.talents}
+            onDismiss={() => setShowIntro(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+const ARCHETYPE_FLAVOR: Record<string, string> = {
+  "Guardsman Veteran":   "A hundred campaigns have ground your soul to bedrock. You do not fear death — you have watched it take better soldiers than you.",
+  "Exiled Psyker":       "The Warp whispers in your blood. You are a weapon the Imperium fears to wield and cannot afford to discard.",
+  "Hive Ganger":         "The underhive forged you in poison and darkness. Every scar is a lesson. Every lesson kept you breathing.",
+  "Rogue Trader Scion":  "You carry a Warrant of Trade worth a dozen star systems and a reputation worth considerably less. Both are problems you intend to fix.",
+  "Penitent Sister":     "Faith is your armor. Guilt is your fuel. The Emperor's enemies will learn which burns hotter.",
+  "Tech-Priest Initiate":"Flesh is weak. Steel endures. You seek knowledge the Mechanicus buried — and you will dig until your mechadendrites break.",
+  "Criminal Conscript":  "They gave you a gun instead of a firing squad. You intend to make them regret the generosity.",
+  "Civilian Survivor":   "You were nobody. Then the war found you. Now you are nobody with a weapon and nothing left to lose.",
+};
+
+const DIFFICULTY_FLAVOR: Record<string, string> = {
+  "Narrative": "The Emperor's light guides your path. Death is possible — but the story comes first.",
+  "Balanced":  "Standard combat conditions. Expect fire, blood, and hard choices with no clean answers.",
+  "Grimdark":  "There is only war. Every wound is permanent. Every mistake is final. Fortune does not favor the faithful here.",
+};
+
+const INTRO_PAGES = [
+  "lore",
+  "rules",
+  "dossier",
+  "sendoff",
+] as const;
+
+type IntroPage = typeof INTRO_PAGES[number];
+
+interface PreGameIntroProps {
+  name: string;
+  archetype: string;
+  motivation: string;
+  difficulty: string;
+  stats: Record<string, number>;
+  skills: string[];
+  talents: string[];
+  onDismiss: () => void;
+}
+
+function PreGameIntro({ name, archetype, motivation, difficulty, stats, skills, talents, onDismiss }: PreGameIntroProps) {
+  const [page, setPage] = useState<IntroPage>("lore");
+  const [visible, setVisible] = useState(true);
+
+  const pageIndex = INTRO_PAGES.indexOf(page);
+  const isLast = pageIndex === INTRO_PAGES.length - 1;
+
+  const advance = () => {
+    if (isLast) {
+      setVisible(false);
+      setTimeout(onDismiss, 400);
+    } else {
+      setPage(INTRO_PAGES[pageIndex + 1]);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: visible ? 1 : 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center p-6 sm:p-12"
+      onClick={advance}
+    >
+      <div className="w-full max-w-lg">
+
+        <AnimatePresence mode="wait">
+
+          {page === "lore" && (
+            <IntroScreen key="lore">
+              <IntroTitle>GRIM ECHOES</IntroTitle>
+              <IntroSub>40K Solo Narrative RPG · M41.999</IntroSub>
+              <IntroDivider />
+              <IntroBody delay={0.3}>
+                Ten thousand years have passed since the Emperor ascended to the Golden Throne.
+                The Imperium of Man — five hundred worlds of fire and iron — creaks under the weight
+                of eternal war.
+              </IntroBody>
+              <IntroBody delay={0.9}>
+                On every front, the tide turns against humanity. Chaos pours from the Eye of Terror.
+                Xenos fleets darken the stars. Heresy festers in the hive cities and forge worlds alike.
+              </IntroBody>
+              <IntroBody delay={1.5}>
+                Into this darkness, one operative steps forward. One soul, armed and afraid,
+                to do what must be done.
+              </IntroBody>
+            </IntroScreen>
+          )}
+
+          {page === "rules" && (
+            <IntroScreen key="rules">
+              <IntroTitle>MISSION BRIEFING</IntroTitle>
+              <IntroSub>Standing Orders for All Operatives</IntroSub>
+              <IntroDivider />
+              <div className="space-y-3 mt-4">
+                {[
+                  ["ACTIONS",     "Select a tactical option or type a custom command to shape the narrative."],
+                  ["HP",          "Reach zero and your deployment ends. Use medkits and rest to recover."],
+                  ["XP & STATS",  "Gain XP through combat and deeds. Spend it in your Dossier to raise stats."],
+                  ["CREDITS",     "Barter, scavenge, and complete jobs. Credits buy gear and information."],
+                  ["CORRUPTION",  "Every dark act costs you. Reach 10 Corruption and the Warp claims your soul."],
+                  ["SAVE",        "Hit the Save button in the top bar after any major moment to record your progress."],
+                ].map(([label, desc], i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 * i + 0.2 }}
+                    className="flex gap-3 items-start"
+                  >
+                    <span className="text-primary font-mono text-[10px] font-bold shrink-0 w-20 uppercase tracking-tight pt-0.5">{label}</span>
+                    <span className="text-zinc-400 text-xs leading-relaxed">{desc}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </IntroScreen>
+          )}
+
+          {page === "dossier" && (
+            <IntroScreen key="dossier">
+              <IntroTitle>OPERATIVE DOSSIER</IntroTitle>
+              <IntroSub>Inquisitorial Record — Eyes Only</IntroSub>
+              <IntroDivider />
+              <div className="space-y-4 mt-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs"
+                >
+                  {[
+                    ["DESIGNATION", name || "Unknown"],
+                    ["ARCHETYPE",   archetype || "Unclassified"],
+                    ["CLEARANCE",   difficulty || "Balanced"],
+                    ["PRIMARY DRIVE", motivation || "Survival"],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <div className="text-[9px] text-zinc-600 uppercase tracking-widest">{k}</div>
+                      <div className="text-white font-bold font-mono text-xs uppercase tracking-tight">{v}</div>
+                    </div>
+                  ))}
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex gap-2 flex-wrap"
+                >
+                  {Object.entries(stats).map(([k, v]) => (
+                    <div key={k} className="text-center border border-zinc-800 rounded px-2 py-1 min-w-[36px]">
+                      <div className="text-[8px] text-zinc-600 uppercase">{k}</div>
+                      <div className="text-primary font-mono font-bold text-sm">{v}</div>
+                    </div>
+                  ))}
+                </motion.div>
+
+                {archetype && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="text-zinc-500 text-xs leading-relaxed italic border-l border-zinc-800 pl-3"
+                  >
+                    {ARCHETYPE_FLAVOR[archetype] ?? "An operative of unknown provenance. Proceed with caution."}
+                  </motion.p>
+                )}
+              </div>
+            </IntroScreen>
+          )}
+
+          {page === "sendoff" && (
+            <IntroScreen key="sendoff">
+              <IntroTitle>FOR THE EMPEROR</IntroTitle>
+              <IntroDivider />
+              <IntroBody delay={0.3}>
+                {DIFFICULTY_FLAVOR[difficulty] ?? DIFFICULTY_FLAVOR["Balanced"]}
+              </IntroBody>
+              <IntroBody delay={1.0}>
+                The drop pod is locked. The coordinates are loaded.
+                Whatever waits down there in the dark — it does not know you are coming.
+              </IntroBody>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.8 }}
+                className="mt-8 text-center"
+              >
+                <p className="text-primary font-bold uppercase tracking-[0.3em] text-sm mb-1">Good Luck, Operative.</p>
+                <p className="text-zinc-600 text-[10px] uppercase tracking-widest">You will need it.</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ delay: 2.5, duration: 1.2, repeat: Infinity }}
+                className="mt-10 text-center"
+              >
+                <span className="text-zinc-500 text-[10px] uppercase tracking-[0.4em]">Tap to Begin Deployment</span>
+              </motion.div>
+            </IntroScreen>
+          )}
+
+        </AnimatePresence>
+
+        {/* Page indicator */}
+        <div className="flex justify-center gap-2 mt-8">
+          {INTRO_PAGES.map((p, i) => (
+            <div
+              key={p}
+              className={cn(
+                "h-0.5 rounded-full transition-all duration-300",
+                p === page ? "w-6 bg-primary" : i < pageIndex ? "w-2 bg-zinc-700" : "w-2 bg-zinc-800"
+              )}
+            />
+          ))}
+        </div>
+
+        {page !== "sendoff" && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2.0 }}
+            className="text-center text-[10px] text-zinc-700 uppercase tracking-[0.3em] mt-4"
+          >
+            Tap to continue
+          </motion.p>
+        )}
+
+      </div>
+    </motion.div>
+  );
+}
+
+function IntroScreen({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.35 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function IntroTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.h2
+      initial={{ opacity: 0, letterSpacing: "0.1em" }}
+      animate={{ opacity: 1, letterSpacing: "0.3em" }}
+      transition={{ duration: 0.6 }}
+      className="text-2xl sm:text-3xl font-bold parchment-text uppercase tracking-[0.3em] text-center"
+    >
+      {children}
+    </motion.h2>
+  );
+}
+
+function IntroSub({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.3 }}
+      className="text-[10px] text-zinc-500 uppercase tracking-[0.25em] text-center mt-1"
+    >
+      {children}
+    </motion.p>
+  );
+}
+
+function IntroDivider() {
+  return (
+    <motion.div
+      initial={{ scaleX: 0 }}
+      animate={{ scaleX: 1 }}
+      transition={{ delay: 0.4, duration: 0.5 }}
+      className="h-px bg-primary/40 my-5 origin-left"
+    />
+  );
+}
+
+function IntroBody({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay }}
+      className="text-zinc-400 text-sm leading-relaxed mt-3 font-serif"
+    >
+      {children}
+    </motion.p>
   );
 }
 
