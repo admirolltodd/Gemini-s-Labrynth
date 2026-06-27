@@ -256,94 +256,99 @@ function OnboardingScreen({ onComplete }: { onComplete: (key: string) => void })
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 w-full max-w-lg mx-auto"
+      className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 w-full max-w-lg mx-auto"
     >
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring' }}
         >
-          <Skull className="w-16 h-16 text-primary mx-auto mb-4" />
+          <Skull className="w-14 h-14 text-primary mx-auto mb-3 drop-shadow-[0_0_12px_rgba(200,0,0,0.6)]" />
         </motion.div>
-        <h1 className="text-4xl font-bold parchment-text uppercase tracking-widest mb-2">GRIM ECHOES</h1>
-        <p className="text-sm text-muted-foreground uppercase tracking-widest">40K Solo Narrative RPG</p>
-        <div className="w-24 h-1 bg-primary mx-auto mt-3" />
+        <h1 className="text-5xl font-bold parchment-text uppercase tracking-widest mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">GRIM ECHOES</h1>
+        <p
+          className="text-xs font-bold uppercase tracking-[0.35em]"
+          style={{ color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,1)' }}
+        >
+          40K Solo Narrative RPG
+        </p>
+        <div className="w-24 h-[2px] bg-primary mx-auto mt-3 shadow-[0_0_8px_rgba(200,0,0,0.8)]" />
       </div>
 
-      <Card className="w-full bg-card/80 backdrop-blur-md border-border/60 shadow-2xl">
-        <CardContent className="p-6 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground text-sm font-bold">1</span>
+      <Card className="w-full bg-black/85 backdrop-blur-md border border-primary/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-xl">
+        <CardContent className="p-5 space-y-5">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary border border-primary/60 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(200,0,0,0.5)]">
+              <span className="text-white text-sm font-bold">1</span>
             </div>
             <div>
-              <div className="text-sm font-bold uppercase tracking-widest mb-0.5">Get a Vox-Array Key</div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                This game uses the Gemini AI as your Game Master. You need a free API key from Google.
+              <div className="text-sm font-bold uppercase tracking-widest mb-1 text-white">Get a Vox-Array Key</div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                This game uses Gemini AI as your Game Master. You need a free API key from Google.
               </p>
             </div>
           </div>
 
-          <div className="bg-secondary/30 rounded-lg p-4 border border-border/40">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-3 font-bold">Steps to get your key:</p>
-            <ol className="space-y-2 text-xs text-foreground">
+          <div className="bg-zinc-900/80 rounded-lg p-4 border border-zinc-700/60">
+            <p className="text-[10px] text-primary uppercase tracking-[0.2em] mb-3 font-bold">Steps to get your key:</p>
+            <ol className="space-y-2 text-xs text-zinc-300">
               <li className="flex items-start gap-2">
-                <span className="text-primary font-bold shrink-0">1.</span>
-                <span>Visit <span className="font-mono text-primary">aistudio.google.com</span></span>
+                <span className="text-primary font-bold shrink-0 w-4">1.</span>
+                <span>Visit <span className="font-mono text-primary font-bold">aistudio.google.com</span></span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary font-bold shrink-0">2.</span>
+                <span className="text-primary font-bold shrink-0 w-4">2.</span>
                 <span>Sign in with your Google account</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary font-bold shrink-0">3.</span>
-                <span>Click <span className="font-bold">"Get API key"</span> → <span className="font-bold">"Create API key"</span></span>
+                <span className="text-primary font-bold shrink-0 w-4">3.</span>
+                <span>Click <span className="font-bold text-white">"Get API key"</span> → <span className="font-bold text-white">"Create API key"</span></span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary font-bold shrink-0">4.</span>
+                <span className="text-primary font-bold shrink-0 w-4">4.</span>
                 <span>Copy and paste the key below</span>
               </li>
             </ol>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground text-sm font-bold">2</span>
+            <div className="w-8 h-8 rounded-full bg-primary border border-primary/60 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(200,0,0,0.5)]">
+              <span className="text-white text-sm font-bold">2</span>
             </div>
-            <div className="text-sm font-bold uppercase tracking-widest">Enter Your Key</div>
+            <div className="text-sm font-bold uppercase tracking-widest text-white">Enter Your Key</div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="password"
-                  className="w-full bg-secondary border border-border rounded-md pl-9 pr-3 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none"
-                  placeholder="AIza..."
-                  value={apiKeyInput}
-                  onChange={(e) => { setApiKeyInput(e.target.value); setSaved(false); }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                />
-              </div>
+            <div className="relative">
+              <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="password"
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-md pl-9 pr-3 py-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder:text-zinc-600"
+                placeholder="AIza..."
+                value={apiKeyInput}
+                onChange={(e) => { setApiKeyInput(e.target.value); setSaved(false); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              />
             </div>
             <Button
               className={cn(
-                "w-full h-12 uppercase tracking-widest font-bold text-sm transition-all",
-                saved && "bg-green-600 hover:bg-green-600"
+                "w-full h-11 uppercase font-bold text-xs tracking-[0.15em] transition-all border-0",
+                saved
+                  ? "bg-green-700 hover:bg-green-700 text-white"
+                  : "bg-primary hover:bg-primary/90 text-white shadow-[0_0_12px_rgba(200,0,0,0.4)]"
               )}
               disabled={!apiKeyInput.trim() || saved}
               onClick={handleSave}
             >
               {saved ? (
-                <span className="flex items-center gap-2"><CheckCircle size={16} /> Key Authenticated</span>
+                <span className="flex items-center gap-2"><CheckCircle size={15} /> Key Authenticated</span>
               ) : (
                 "Authenticate & Enter the Labyrinth"
               )}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center uppercase tracking-wider">
-              Free tier · Key stored locally on device · Never transmitted to third parties
+            <p className="text-[9px] text-zinc-600 text-center uppercase tracking-wider leading-relaxed">
+              Free tier · Stored locally · Never transmitted to third parties
             </p>
           </div>
         </CardContent>
