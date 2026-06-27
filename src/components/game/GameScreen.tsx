@@ -78,11 +78,13 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     if (game.history.length === 0) {
       handleAction(
         "Describe my insertion into the active warzone. Establish an epic, vast scale with towering ruins, dramatic lighting over the battlefield, and the chaotic roar of war. Give me tactical options.",
+        true,
       );
     } else {
       // Loaded game — brief the player on where they left off
       handleAction(
         "Provide a brief Cogitator Briefing: 2 sentences recapping recent events and current tactical situation. Then give me 4 fresh tactical options.",
+        true,
       );
     }
   }, [apiKey]);
@@ -123,13 +125,13 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     }
   };
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: string, silent = false) => {
     if (!action.trim() || isThinking) return;
     setLoadingPhrase(LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)]);
     setIsThinking(true);
     setInput("");
 
-    if (game.history.length > 0) game.addHistory({ role: "user", content: action });
+    if (!silent && game.history.length > 0) game.addHistory({ role: "user", content: action });
 
     try {
       if (!apiKey) throw new Error("VOX-LINK FAILURE: No Gemini API Key. Open Settings to connect.");
@@ -183,11 +185,9 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   };
 
   const handleSave = async () => {
-    const name =
-      game.history[0]?.content.split(",")[0].replace("Character Created: ", "") ||
-      "Unnamed_Operative";
+    const saveName = game.name || "Unnamed_Operative";
     try {
-      await game.saveGame(name);
+      await game.saveGame(saveName);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     } catch (e) {
@@ -217,8 +217,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     return "Insubordinate";
   };
 
-  const operativeName =
-    game.history[0]?.content.split(",")[0].replace("Character Created: ", "") || "OPERATIVE";
+  const operativeName = game.name || "OPERATIVE";
 
   const hpPercent = game.hp.max > 0 ? (game.hp.current / game.hp.max) * 100 : 0;
   const hpColor =
@@ -565,7 +564,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
       <SkillsPanel
         isOpen={isSkillsOpen}
         onClose={() => setIsSkillsOpen(false)}
-        onAction={(action) => { setIsSkillsOpen(false); handleAction(action); }}
+        onAction={(action) => { setIsSkillsOpen(false); handleAction(action, true); }}
       />
     </div>
   );

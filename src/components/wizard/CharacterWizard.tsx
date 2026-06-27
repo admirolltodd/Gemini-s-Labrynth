@@ -20,16 +20,163 @@ import {
   Brain,
   Heart,
   Dice5,
-  Loader2,
   Sparkles,
   UserPlus,
 } from "lucide-react";
 import { Archetype, Difficulty, Stats } from "../../types/game";
-import {
-  generatePrebuiltCharacters,
-  QuickStartCharacter,
-} from "../../lib/gemini";
+import { QuickStartCharacter } from "../../lib/gemini";
 import { useSettingsStore } from "../../store/useSettingsStore";
+
+const LOCAL_QUICK_STARTS: QuickStartCharacter[] = [
+  {
+    name: "Cade Stryker",
+    archetype: "Guardsman Veteran",
+    backstory: "A hardened survivor of Cadia's fall. Cade lost his regiment and his world keeping only his lasgun and a burning hatred for the Ruinous Powers that consumed everything he loved.",
+    motivation: "Vengeance",
+    stats: { STR: 3, DEX: 3, TGH: 4, INT: 2, WIL: 2, AWA: 1, INF: 1 },
+    skills: ["Athletics", "Survival", "Perception"],
+    talents: ["Deadeye"],
+  },
+  {
+    name: "Mira Ven",
+    archetype: "Guardsman Veteran",
+    backstory: "Thirty campaigns on Armageddon turned Mira into something more scar than soldier. She took an ork choppa to the jaw and still held the line alone for six hours.",
+    motivation: "Survival",
+    stats: { STR: 2, DEX: 3, TGH: 5, INT: 2, WIL: 2, AWA: 1, INF: 1 },
+    skills: ["Athletics", "Intimidation", "Medicae"],
+    talents: ["Tough as Nails"],
+  },
+  {
+    name: "Vaelia",
+    archetype: "Exiled Psyker",
+    backstory: "Vaelia's powers manifested late, and she narrowly escaped the Black Ships. She now lives in hiding among the underhive, struggling to control the whispers bleeding through from the Warp.",
+    motivation: "Survival",
+    stats: { STR: 1, DEX: 2, TGH: 1, INT: 3, WIL: 5, AWA: 3, INF: 1 },
+    skills: ["Coercion", "Scrutiny", "Stealth"],
+    talents: ["Intimidating Presence"],
+  },
+  {
+    name: "Aldric Mourne",
+    archetype: "Exiled Psyker",
+    backstory: "A sanctioned Astropath who transmitted a forbidden message from a daemon-touched admiral. The Inquisition burned his choir. He alone walked out of the ash.",
+    motivation: "Vengeance",
+    stats: { STR: 1, DEX: 1, TGH: 2, INT: 4, WIL: 5, AWA: 2, INF: 1 },
+    skills: ["Lore", "Scrutiny", "Investigation"],
+    talents: ["Intimidating Presence"],
+  },
+  {
+    name: "Kaelen Voss",
+    archetype: "Hive Ganger",
+    backstory: "Born in the toxic sumps of Necromunda, Kaelen learned that a blade speaks louder than words. He escaped the underhive after a gang war left him its sole survivor.",
+    motivation: "Survival",
+    stats: { STR: 3, DEX: 4, TGH: 3, INT: 1, WIL: 2, AWA: 2, INF: 1 },
+    skills: ["Stealth", "Athletics", "Intimidation"],
+    talents: ["Street Survivor"],
+  },
+  {
+    name: "Thrax",
+    archetype: "Hive Ganger",
+    backstory: "Pit fighter. Executioner. Legend of the Sump Pits. Thrax killed his gang boss in front of three hundred witnesses and walked out with a murder-bounty and nothing else.",
+    motivation: "Power",
+    stats: { STR: 5, DEX: 3, TGH: 4, INT: 1, WIL: 1, AWA: 1, INF: 1 },
+    skills: ["Intimidation", "Athletics", "Coercion"],
+    talents: ["Brutal Swing"],
+  },
+  {
+    name: "Orellius Tyche",
+    archetype: "Rogue Trader Scion",
+    backstory: "The disgraced third son of a wealthy trading dynasty. Orellius was exiled after a bad deal with a xenos corsair cost the family a lucrative charter worth three star systems.",
+    motivation: "Power",
+    stats: { STR: 1, DEX: 2, TGH: 1, INT: 3, WIL: 3, AWA: 2, INF: 4 },
+    skills: ["Charm", "Barter", "Deception"],
+    talents: ["Silver Tongue"],
+  },
+  {
+    name: "Lyranthe Vel",
+    archetype: "Rogue Trader Scion",
+    backstory: "Her Warrant of Trade arrived the same day her father's flagship was destroyed. Lyranthe inherited ruin — a name, a debt, and one rusting frigate with a mutinous crew.",
+    motivation: "Survival",
+    stats: { STR: 1, DEX: 2, TGH: 2, INT: 3, WIL: 2, AWA: 2, INF: 4 },
+    skills: ["Barter", "Deception", "Piloting"],
+    talents: ["Black Market Savvy"],
+  },
+  {
+    name: "Sister Ignatia",
+    archetype: "Penitent Sister",
+    backstory: "Once a proud Retributor, Ignatia's squad was wiped out because of her tactical hesitation. She now seeks redemption through holy fire and unwavering conviction in the Emperor's light.",
+    motivation: "Faith",
+    stats: { STR: 2, DEX: 2, TGH: 3, INT: 2, WIL: 5, AWA: 1, INF: 1 },
+    skills: ["Lore", "Medicae", "Intimidation"],
+    talents: ["Tough as Nails"],
+  },
+  {
+    name: "Sister Maevia",
+    archetype: "Penitent Sister",
+    backstory: "The only survivor of a daemon incursion that consumed her entire convent. The Ecclesiarchy named her blessed. She named herself damned. Now she fights until the Emperor disagrees.",
+    motivation: "Faith",
+    stats: { STR: 3, DEX: 2, TGH: 3, INT: 1, WIL: 4, AWA: 2, INF: 1 },
+    skills: ["Intimidation", "Athletics", "Survival"],
+    talents: ["Relentless Advance"],
+  },
+  {
+    name: "Xerxas-9",
+    archetype: "Tech-Priest Initiate",
+    backstory: "A low-ranking Enginseer who uncovered a dangerous scrapcode fragment inside a forge-world cogitator core. His superiors ordered him silenced. He disagreed, violently.",
+    motivation: "Curiosity",
+    stats: { STR: 2, DEX: 1, TGH: 2, INT: 5, WIL: 4, AWA: 1, INF: 1 },
+    skills: ["Tech-Use", "Lore", "Investigation"],
+    talents: ["Mechanicus Adept"],
+  },
+  {
+    name: "Fervus-17",
+    archetype: "Tech-Priest Initiate",
+    backstory: "Excommunicated by the Mechanicus for pursuing forbidden cognition patterns, Fervus carries three classified STC fragments in a lead-sealed dataslate sewn into his chest cavity.",
+    motivation: "Curiosity",
+    stats: { STR: 1, DEX: 2, TGH: 3, INT: 5, WIL: 3, AWA: 1, INF: 1 },
+    skills: ["Tech-Use", "Investigation", "Stealth"],
+    talents: ["Mechanicus Adept"],
+  },
+  {
+    name: "Jolrek Dun",
+    archetype: "Criminal Conscript",
+    backstory: "Convicted for twelve counts of murder aboard a void-station — most of them deserved. The Commissar gave him a choice: the firing squad or a lasgun pointed at the enemy instead.",
+    motivation: "Survival",
+    stats: { STR: 4, DEX: 3, TGH: 4, INT: 1, WIL: 2, AWA: 1, INF: 1 },
+    skills: ["Intimidation", "Athletics", "Stealth"],
+    talents: ["Brutal Swing"],
+  },
+  {
+    name: "Sable Crix",
+    archetype: "Criminal Conscript",
+    backstory: "A former Arbitrator who ran a protection racket for three years before Internal Affairs caught up. She knows every trick the law uses, because she invented half of them.",
+    motivation: "Power",
+    stats: { STR: 2, DEX: 4, TGH: 2, INT: 2, WIL: 2, AWA: 3, INF: 1 },
+    skills: ["Investigation", "Coercion", "Sleight of Hand"],
+    talents: ["Street Survivor"],
+  },
+  {
+    name: "Emmett Praet",
+    archetype: "Civilian Survivor",
+    backstory: "An Administratum data-clerk who happened to be filing manifests when the Chaos warband breached the compound walls. He survived by hiding under a pile of requisition forms for nine hours.",
+    motivation: "Survival",
+    stats: { STR: 1, DEX: 2, TGH: 2, INT: 4, WIL: 2, AWA: 3, INF: 2 },
+    skills: ["Investigation", "Scrutiny", "Deception"],
+    talents: ["Street Survivor"],
+  },
+  {
+    name: "Yeva Mors",
+    archetype: "Civilian Survivor",
+    backstory: "A field medicae orderly who watched an Inquisitor purge her entire hospital ward on suspicion of heresy. She dragged seven patients into the sewer. Three survived.",
+    motivation: "Vengeance",
+    stats: { STR: 1, DEX: 2, TGH: 3, INT: 3, WIL: 3, AWA: 2, INF: 2 },
+    skills: ["Medicae", "Survival", "Stealth"],
+    talents: ["Tough as Nails"],
+  },
+];
+
+function getRandomCharacters(): QuickStartCharacter[] {
+  return [...LOCAL_QUICK_STARTS].sort(() => 0.5 - Math.random()).slice(0, 3);
+}
 
 const ARCHETYPES: {
   id: Archetype;
@@ -163,19 +310,9 @@ export default function CharacterWizard({
   const [difficulty, setDifficulty] = useState<Difficulty>("Balanced");
   const [motivation, setMotivation] = useState("Survival");
 
-  const [prebuilds, setPrebuilds] = useState<QuickStartCharacter[]>([]);
-  const [isLoadingPrebuilds, setIsLoadingPrebuilds] = useState(false);
+  const [prebuilds, setPrebuilds] = useState<QuickStartCharacter[]>(() => getRandomCharacters());
 
-  React.useEffect(() => {
-    loadPrebuilds();
-  }, [apiKey]);
-
-  const loadPrebuilds = async () => {
-    setIsLoadingPrebuilds(true);
-    const results = await generatePrebuiltCharacters(apiKey);
-    setPrebuilds(results);
-    setIsLoadingPrebuilds(false);
-  };
+  const loadPrebuilds = () => setPrebuilds(getRandomCharacters());
 
   const handleSelectQuickStart = (char: QuickStartCharacter) => {
     setName(char.name);
@@ -208,6 +345,7 @@ export default function CharacterWizard({
 
   const finalize = () => {
     setGameState({
+      name,
       archetype,
       difficulty,
       motivation,
@@ -216,7 +354,7 @@ export default function CharacterWizard({
       skills: selectedSkills,
       talents: [selectedTalent],
       chapter: "Prologue",
-      history: [{ role: "ai", content: `Character Created: ${name}, the ${archetype}.` }],
+      history: [],
     });
     onComplete();
   };
@@ -243,27 +381,8 @@ export default function CharacterWizard({
                   </p>
                 </div>
 
-                {!apiKey && (
-                  <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-md text-center max-w-md mx-auto">
-                    <p className="text-destructive font-bold text-xs uppercase mb-1">Vox-Link Key Missing</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Please enter your Gemini API Key in the{" "}
-                      <span className="font-bold text-primary cursor-pointer hover:underline" onClick={onCancel}>
-                        Settings
-                      </span>{" "}
-                      menu to enable AI character generation.
-                    </p>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {isLoadingPrebuilds
-                    ? Array(3).fill(0).map((_, i) => (
-                        <Card key={i} className="bg-secondary/20 border-dashed animate-pulse h-[280px] flex items-center justify-center">
-                          <Loader2 className="animate-spin text-muted-foreground" />
-                        </Card>
-                      ))
-                    : prebuilds.map((char, i) => (
+                  {prebuilds.map((char, i) => (
                         <Card key={i} className="group cursor-pointer hover:border-primary transition-all bg-secondary/10 hover:bg-primary/5 flex flex-col" onClick={() => handleSelectQuickStart(char)}>
                           <CardHeader className="p-4 border-b border-border/50">
                             <div className="flex justify-between items-start">
@@ -287,7 +406,7 @@ export default function CharacterWizard({
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                  ))}
                 </div>
 
                 <div className="flex flex-col items-center gap-3 pt-4">

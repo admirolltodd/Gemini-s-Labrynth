@@ -32,6 +32,7 @@ export interface Companion {
 
 export interface GameState {
   version: string;
+  name: string;
   archetype: Archetype | '';
   difficulty: Difficulty | '';
   motivation: string;

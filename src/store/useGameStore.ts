@@ -24,8 +24,8 @@ function readSaves(): Record<string, SaveSlot> {
 
 export function listSaves(): Array<{ name: string; savedAt: string; archetype: string }> {
   const saves = readSaves();
-  return Object.entries(saves).map(([name, slot]) => ({
-    name,
+  return Object.entries(saves).map(([key, slot]) => ({
+    name: slot.name || key,
     savedAt: slot.savedAt,
     archetype: slot.archetype,
   }));
@@ -43,6 +43,7 @@ const INITIAL_STATS: Stats = {
 
 const INITIAL_STATE: GameState = {
   version: '2.0',
+  name: '',
   archetype: '',
   difficulty: '',
   motivation: '',
