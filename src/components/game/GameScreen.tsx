@@ -391,16 +391,16 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                       key={key}
                       variant="outline"
                       disabled={isThinking}
-                      className="w-full h-auto py-3 px-4 text-left flex items-center gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group"
+                      className="w-full h-auto py-3 px-4 text-left flex items-start gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal"
                       onClick={() => handleAction(value)}
                     >
                       <Badge
                         variant="outline"
-                        className="shrink-0 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                        className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
                       >
                         {key}
                       </Badge>
-                      <span className="text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 flex-1">
+                      <span className="flex-1 min-w-0 text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 break-words">
                         {value}
                       </span>
                     </Button>
