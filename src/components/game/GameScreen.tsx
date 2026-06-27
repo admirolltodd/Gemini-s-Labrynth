@@ -276,7 +276,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                 className={cn("flex flex-col gap-2", msg.role === "user" ? "items-end" : "items-start")}
               >
                 {msg.role === "ai" ? (
-                  <div className="space-y-3 sm:space-y-4 w-full">
+                  <div className="space-y-4 sm:space-y-6 w-full">
                     {msg.narrative && (
                       <div className="text-[9px] sm:text-[10px] font-mono text-accent bg-accent/10 px-3 py-1 rounded border border-accent/20 inline-block">
                         {msg.narrative}
@@ -286,10 +286,10 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                       {i === game.history.length - 1 ? (
                         <TypewriterText
                           text={msg.content}
-                          className="leading-relaxed text-base sm:text-lg first-letter:text-3xl sm:first-letter:text-4xl first-letter:font-serif first-letter:mr-1 first-letter:float-left"
+                          className="leading-loose text-base sm:text-lg first-letter:text-3xl sm:first-letter:text-4xl first-letter:font-serif first-letter:mr-1 first-letter:float-left"
                         />
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4 sm:space-y-5">
                           {msg.content
                             .split("\n")
                             .filter((p) => p.trim())
@@ -297,7 +297,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                               <p
                                 key={pIdx}
                                 className={cn(
-                                  "leading-relaxed text-base sm:text-lg",
+                                  "leading-loose text-base sm:text-lg",
                                   pIdx === 0 &&
                                     "first-letter:text-3xl sm:first-letter:text-4xl first-letter:font-serif first-letter:mr-1 first-letter:float-left",
                                 )}
@@ -312,13 +312,13 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="relative pl-4 sm:pl-6 py-3 sm:py-4 border-l-2 border-primary/30 bg-primary/5 rounded-r-lg gothic-border"
+                        className="relative pl-5 sm:pl-7 py-4 sm:py-5 border-l-2 border-primary/40 bg-primary/5 rounded-r-lg"
                       >
-                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-1.5 flex items-center gap-1.5">
-                          <MessageSquare size={10} />
+                        <div className="text-[11px] sm:text-xs uppercase tracking-[0.2em] font-bold text-primary mb-3 flex items-center gap-2">
+                          <MessageSquare size={12} />
                           Vox-Link: {msg.dialogue.speaker}
                         </div>
-                        <p className="text-primary/90 italic leading-relaxed font-serif text-base sm:text-xl border-l border-primary/20 pl-3 sm:pl-4 py-1">
+                        <p className="text-primary/95 italic font-serif text-lg sm:text-2xl leading-relaxed border-l-2 border-primary/25 pl-4 sm:pl-5 py-1">
                           "{msg.dialogue.text}"
                         </p>
                       </motion.div>
@@ -384,26 +384,26 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
             exit={{ opacity: 0, y: 8 }}
             className="border-t border-border/50 bg-card/80 backdrop-blur-md shrink-0 px-3 py-2 sm:px-6 sm:py-3"
           >
-            <div className="max-w-3xl mx-auto grid grid-cols-2 gap-1.5 sm:gap-2">
+            <div className="max-w-3xl mx-auto flex flex-col gap-1.5 sm:gap-2">
               {isThinking
                 ? ["A", "B", "C", "D"].map((k) => (
-                    <div key={k} className="h-10 sm:h-11 rounded-md border border-border/40 bg-secondary/30 animate-pulse" />
+                    <div key={k} className="h-12 rounded-md border border-border/40 bg-secondary/30 animate-pulse" />
                   ))
                 : latestChoices && Object.entries(latestChoices).map(([key, value]) => (
                     <Button
                       key={key}
                       variant="outline"
                       disabled={isThinking}
-                      className="w-full h-auto min-h-10 py-2 px-3 text-left flex items-start gap-2 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal break-words"
+                      className="w-full h-auto py-3 px-4 text-left flex items-center gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group"
                       onClick={() => handleAction(value)}
                     >
                       <Badge
                         variant="outline"
-                        className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[9px] h-5 w-6 items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                        className="shrink-0 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
                       >
                         {key}
                       </Badge>
-                      <span className="text-[10px] sm:text-xs font-medium leading-tight opacity-85 group-hover:opacity-100 flex-1">
+                      <span className="text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 flex-1">
                         {value}
                       </span>
                     </Button>
@@ -914,13 +914,13 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
 function TypewriterText({ text, className }: { text: string; className?: string }) {
   const paragraphs = text.split("\n").filter((p) => p.trim());
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-4 sm:space-y-5">
       {paragraphs.map((para, pIdx) => {
         const words = para.split(" ");
         return (
           <motion.p
             key={pIdx}
-            className={cn("leading-relaxed text-base sm:text-lg", pIdx === 0 ? className : "")}
+            className={cn("leading-loose text-base sm:text-lg", pIdx === 0 ? className : "")}
             initial="hidden"
             animate="visible"
             variants={{
