@@ -277,11 +277,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
               >
                 {msg.role === "ai" ? (
                   <div className="space-y-4 sm:space-y-6 w-full">
-                    {msg.narrative && (
-                      <div className="text-[9px] sm:text-[10px] font-mono text-accent bg-accent/10 px-3 py-1 rounded border border-accent/20 inline-block">
-                        {msg.narrative}
-                      </div>
-                    )}
+                    {msg.narrative && <RollLog text={msg.narrative} />}
                     <div>
                       {i === game.history.length - 1 ? (
                         <TypewriterText
@@ -881,6 +877,76 @@ function IntroBody({ children, delay = 0 }: { children: React.ReactNode; delay?:
     >
       {children}
     </motion.p>
+  );
+}
+
+function RollLog({ text }: { text: string }) {
+  // Parse: "[ROLL] Action: '...' Check: WIL + 5 vs DC 14 Roll: 1d20 (14) + 5 = 19 → Success"
+  const outcomeMatch = text.match(/→\s*(Critical\s+)?(\w+)\s*$/i);
+  const outcome = outcomeMatch ? outcomeMatch[0].replace('→', '').trim() : null;
+  const totalMatch = text.match(/=\s*(\d+)\s*→/);
+  const total = totalMatch?.[1] ?? null;
+  const checkMatch = text.match(/Check:\s*(.+?)\s*Roll:/);
+  const check = checkMatch?.[1]?.trim() ?? null;
+  const rollMatch = text.match(/Roll:\s*(.+?)\s*→/);
+  const rollExpr = rollMatch?.[1]?.trim() ?? null;
+
+  const isSuccess = /success/i.test(outcome ?? '');
+  const isCritical = /critical/i.test(outcome ?? '');
+
+  if (!outcome || !total) {
+    // No recognisable roll structure — render compact fallback
+    return (
+      <div className="text-[9px] font-mono text-muted-foreground/60 bg-secondary/20 px-3 py-1.5 rounded border border-border/30 inline-block">
+        {text}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(
+      "flex items-center gap-2 sm:gap-3 rounded-lg px-3 py-2 border font-mono text-[10px] sm:text-xs w-full",
+      isSuccess
+        ? "bg-primary/5 border-primary/20"
+        : "bg-destructive/5 border-destructive/20"
+    )}>
+      {/* Dice icon */}
+      <span className="text-base shrink-0">⚂</span>
+
+      {/* Check formula — small, muted */}
+      {check && (
+        <span className="text-muted-foreground/70 shrink-0 hidden sm:inline">{check}</span>
+      )}
+      {check && <span className="text-border/60 hidden sm:inline">·</span>}
+
+      {/* Roll expression compact on mobile */}
+      {rollExpr && (
+        <span className="text-muted-foreground/60 shrink-0 truncate max-w-[120px] sm:max-w-none">
+          {rollExpr}
+        </span>
+      )}
+
+      <span className="flex-1" />
+
+      {/* The number — this is what they need to see */}
+      <span className={cn(
+        "text-xl sm:text-2xl font-bold shrink-0 tabular-nums",
+        isSuccess ? "text-primary" : "text-destructive"
+      )}>
+        {total}
+      </span>
+
+      {/* Outcome badge */}
+      <span className={cn(
+        "shrink-0 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded",
+        isCritical && isSuccess && "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+        !isCritical && isSuccess && "bg-primary/20 text-primary border border-primary/30",
+        isCritical && !isSuccess && "bg-orange-500/20 text-orange-400 border border-orange-500/30",
+        !isCritical && !isSuccess && "bg-destructive/20 text-destructive border border-destructive/30",
+      )}>
+        {isSuccess ? "✓" : "✗"} {outcome}
+      </span>
+    </div>
   );
 }
 
