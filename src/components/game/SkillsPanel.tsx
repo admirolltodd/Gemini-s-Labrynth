@@ -31,9 +31,15 @@ const STAT_LABELS: Record<string, string> = {
   INT: 'Intellect', WIL: 'Willpower', AWA: 'Awareness', INF: 'Influence',
 };
 
+const DIFFICULTIES: { id: 'Narrative' | 'Balanced' | 'Grimdark'; desc: string }[] = [
+  { id: 'Narrative', desc: 'Forgiving, story-first. DC 8–20.' },
+  { id: 'Balanced', desc: 'Standard 41st-Millennium war. DC 10–22.' },
+  { id: 'Grimdark', desc: 'Brutal and lethal. DC 12–24.' },
+];
+
 export default function SkillsPanel({ isOpen, onClose, onAction }: SkillsPanelProps) {
   const game = useGameStore();
-  const { skills, talents, xp, credits, corruption, stats, setGameState } = game;
+  const { skills, talents, xp, credits, corruption, stats, difficulty, setGameState } = game;
 
   const corruptionColor =
     corruption >= 8 ? 'text-destructive' :
@@ -103,6 +109,31 @@ export default function SkillsPanel({ isOpen, onClose, onAction }: SkillsPanelPr
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Threat Level / Difficulty */}
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-bold">Threat Level</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {DIFFICULTIES.map((d) => (
+                    <Button
+                      key={d.id}
+                      variant={difficulty === d.id ? 'default' : 'outline'}
+                      onClick={() => setGameState({ difficulty: d.id })}
+                      className={cn(
+                        'h-auto py-2 px-1 flex flex-col items-center gap-0.5 text-[10px] uppercase tracking-tight',
+                        difficulty === d.id
+                          ? 'bg-primary text-white border-primary'
+                          : 'border-border/50 hover:border-primary/50 hover:bg-primary/5'
+                      )}
+                    >
+                      {d.id}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed mt-2">
+                  {DIFFICULTIES.find((d) => d.id === difficulty)?.desc ?? 'Sets the difficulty of skill checks. Takes effect on your next action.'}
+                </p>
               </div>
 
               {/* XP Spend */}
