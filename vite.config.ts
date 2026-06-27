@@ -33,7 +33,11 @@ export default defineConfig(({mode}) => {
       ] : []),
     ],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ""),
+      // SECURITY: never bake an API key into the shipped bundle/APK. This app
+      // uses a bring-your-own-key model — the user enters their Gemini key at
+      // runtime (stored locally on-device only). Hard-pinned to "" so a key
+      // present in the build environment can never be embedded in the binary.
+      'process.env.GEMINI_API_KEY': JSON.stringify(""),
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
     resolve: {
