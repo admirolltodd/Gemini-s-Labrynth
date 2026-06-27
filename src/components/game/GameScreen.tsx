@@ -19,6 +19,7 @@ import {
   Cpu,
   ChevronLeft,
   Check,
+  BarChart2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -438,7 +439,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
           <div className="flex gap-1.5">
             <ActionButton icon={<Package size={16} />} label="Inventory" onClick={() => setIsInventoryOpen(true)} />
             <ActionButton icon={<Users size={16} />} label="Companion" onClick={() => setIsCompanionOpen(true)} />
-            <ActionButton icon={<Zap size={16} />} label="Dossier" onClick={() => setIsSkillsOpen(true)} />
+            <ActionButton icon={<BarChart2 size={16} />} label="Stats & Skills" onClick={() => setIsSkillsOpen(true)} />
           </div>
         </div>
       </div>
