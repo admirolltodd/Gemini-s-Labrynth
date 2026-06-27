@@ -228,7 +228,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     hpPercent > 60 ? "text-primary" : hpPercent > 30 ? "text-amber-500" : "text-destructive";
 
   return (
-    <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
 
       {/* ── Top Bar ── */}
       <div className="h-12 border-b border-border flex items-center justify-between px-3 sm:px-6 bg-card/30 backdrop-blur-sm z-10 shrink-0">

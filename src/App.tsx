@@ -55,7 +55,7 @@ export default function App() {
   return (
     <div 
       className={cn(
-        "min-h-screen w-full flex flex-col overflow-hidden transition-colors duration-500",
+        "h-[100dvh] w-full flex flex-col overflow-hidden transition-colors duration-500",
         theme === 'grimdark' ? 'grimdark-gradient' : ''
       )}
       style={{ fontSize: `${fontSize}px`, fontFamily }}
@@ -148,7 +148,15 @@ export default function App() {
         )}
 
         {view === 'game' && (
-          <GameScreen key="game" onBack={() => setView('menu')} />
+          <motion.div
+            key="game"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col min-h-0"
+          >
+            <GameScreen onBack={() => setView('menu')} />
+          </motion.div>
         )}
 
         {view === 'settings' && (
