@@ -11,6 +11,7 @@ import CharacterWizard from './components/wizard/CharacterWizard';
 import GameScreen from './components/game/GameScreen';
 import LoadGameMenu from './components/menu/LoadGameMenu';
 import { startAmbient, stopAmbient, setAmbientVolume } from './lib/ambient';
+import { App as CapApp } from '@capacitor/app';
 
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,26 @@ export default function App() {
   const [draftApiKey, setDraftApiKey] = useState(apiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [noKeyWarning, setNoKeyWarning] = useState(false);
+  const gameInProgress = useGameStore((s) => s.history.length > 0);
+
+  // Keep the latest view available to the (once-registered) back handler.
+  const viewRef = React.useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
+
+  // Android hardware back button: sub-screens return to the menu; from the
+  // menu it exits the app. (In-game state auto-persists, so this is safe.)
+  useEffect(() => {
+    let handle: { remove: () => void } | undefined;
+    CapApp.addListener('backButton', () => {
+      const v = viewRef.current;
+      if (v === 'menu' || v === 'onboarding') {
+        CapApp.exitApp();
+      } else {
+        setView('menu');
+      }
+    }).then((h) => { handle = h; }).catch(() => {});
+    return () => { handle?.remove(); };
+  }, []);
 
   useEffect(() => {
     const isDark = theme === 'dark' || theme === 'grimdark';
@@ -132,10 +153,13 @@ export default function App() {
               <div className="gothic-corner-tr" />
               <div className="gothic-corner-bl" />
               <div className="gothic-corner-br" />
+              {gameInProgress && (
+                <MenuButton icon={<Play size={18} />} label="Continue Deployment" onClick={() => setView('game')} primary />
+              )}
               <MenuButton icon={<Play size={18} />} label="New Deployment" onClick={() => {
                 if (!apiKey) { setNoKeyWarning(true); setTimeout(() => setNoKeyWarning(false), 3000); return; }
                 setView('wizard');
-              }} primary />
+              }} primary={!gameInProgress} />
               <MenuButton icon={<FolderOpen size={18} />} label="Load Dataslate" onClick={() => {
                 if (!apiKey) { setNoKeyWarning(true); setTimeout(() => setNoKeyWarning(false), 3000); return; }
                 setView('load');

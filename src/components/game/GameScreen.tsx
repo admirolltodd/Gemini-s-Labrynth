@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   Check,
   BarChart2,
+  LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -219,6 +220,16 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     }
   };
 
+  const handleSaveAndExit = async () => {
+    const saveName = game.name || "Unnamed_Operative";
+    try {
+      await game.saveGame(saveName);
+    } catch (e) {
+      console.error("Save failed:", e);
+    }
+    onBack?.();
+  };
+
   const handleUseItem = async (itemName: string) => {
     if (itemName.toLowerCase().includes("medkit")) {
       game.setGameState({ hp: { current: Math.min(game.hp.max, game.hp.current + 4), max: game.hp.max } });
@@ -272,20 +283,33 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
             {game.chapter || "Chapter I: The Awakening"}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSave}
-          className={cn(
-            "h-7 gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0 ml-2 transition-all",
-            isSaved
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-primary/30 hover:bg-primary/10"
+        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSave}
+            className={cn(
+              "h-7 gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest transition-all",
+              isSaved
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-primary/30 hover:bg-primary/10"
+            )}
+          >
+            {isSaved ? <Check size={12} /> : <Save size={12} />}
+            <span className="hidden sm:inline">{isSaved ? "Saved!" : "Save"}</span>
+          </Button>
+          {onBack && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveAndExit}
+              className="h-7 gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest border-border/60 hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-all"
+            >
+              <LogOut size={12} />
+              <span className="hidden sm:inline">Save &amp; Exit</span>
+            </Button>
           )}
-        >
-          {isSaved ? <Check size={12} /> : <Save size={12} />}
-          <span className="hidden sm:inline">{isSaved ? "Saved!" : "Save Game"}</span>
-        </Button>
+        </div>
       </div>
 
       {/* ── Narrative Scroll ── */}
