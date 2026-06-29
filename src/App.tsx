@@ -3,7 +3,7 @@ import { useGameStore } from './store/useGameStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { Skull, Settings, Play, FolderOpen, Share2, X, Key, ExternalLink, CheckCircle, Music, Volume2 } from 'lucide-react';
+import { Skull, Settings, Play, FolderOpen, Share2, X, Key, ExternalLink, CheckCircle, Music, Volume2, UploadCloud, DownloadCloud } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -11,6 +11,7 @@ import CharacterWizard from './components/wizard/CharacterWizard';
 import GameScreen from './components/game/GameScreen';
 import LoadGameMenu from './components/menu/LoadGameMenu';
 import { startAmbient, stopAmbient, setAmbientVolume } from './lib/ambient';
+import { exportBackup, importBackup, countSaves } from './lib/backup';
 import { App as CapApp } from '@capacitor/app';
 
 import { cn } from '@/lib/utils';
@@ -27,7 +28,35 @@ export default function App() {
   const [draftApiKey, setDraftApiKey] = useState(apiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [noKeyWarning, setNoKeyWarning] = useState(false);
+  const [backupStatus, setBackupStatus] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+  const backupFileRef = React.useRef<HTMLInputElement>(null);
   const gameInProgress = useGameStore((s) => s.history.length > 0);
+
+  const flashBackup = (kind: 'ok' | 'err', msg: string) => {
+    setBackupStatus({ kind, msg });
+    setTimeout(() => setBackupStatus(null), 4000);
+  };
+
+  const handleBackup = async () => {
+    if (countSaves() === 0) { flashBackup('err', 'No saved operatives to back up yet.'); return; }
+    try {
+      await exportBackup();
+    } catch (e) {
+      flashBackup('err', `Backup failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const res = await importBackup(file);
+      flashBackup('ok', `Restored ${res.saveCount} operative${res.saveCount === 1 ? '' : 's'}. Open Load Dataslate to play.`);
+    } catch (err) {
+      flashBackup('err', err instanceof Error ? err.message : 'Restore failed.');
+    }
+  };
 
   // Keep the latest view available to the (once-registered) back handler.
   const viewRef = React.useRef(view);
@@ -318,6 +347,49 @@ export default function App() {
                       {Math.round(musicVolume * 100)}%
                     </span>
                   </div>
+                </div>
+
+                {/* Save Data — Backup / Restore */}
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <UploadCloud size={14} className="text-primary" /> Save Data
+                  </label>
+                  {backupStatus && (
+                    <div className={cn(
+                      "text-[11px] uppercase tracking-widest text-center font-bold px-3 py-2 rounded-lg border",
+                      backupStatus.kind === 'ok'
+                        ? "text-primary border-primary/40 bg-primary/10"
+                        : "text-destructive border-destructive/40 bg-destructive/10"
+                    )}>
+                      {backupStatus.msg}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="gap-2 uppercase tracking-widest text-[10px] h-11 border-primary/30 hover:bg-primary/10"
+                      onClick={handleBackup}
+                    >
+                      <UploadCloud size={15} /> Back Up to Drive
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="gap-2 uppercase tracking-widest text-[10px] h-11 border-border/60 hover:bg-secondary/50"
+                      onClick={() => backupFileRef.current?.click()}
+                    >
+                      <DownloadCloud size={15} /> Restore
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Back Up opens the share sheet — choose Save to Drive. Restore reads a backup file back in. Your API key is never included.
+                  </p>
+                  <input
+                    ref={backupFileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={handleRestoreFile}
+                  />
                 </div>
 
               </CardContent>
