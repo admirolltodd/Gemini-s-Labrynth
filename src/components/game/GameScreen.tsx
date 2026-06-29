@@ -69,12 +69,19 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     return null;
   }, [game.history]);
 
+  const lastMsgRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (scrollRef.current) {
-      const el = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]");
+    const el = scrollRef.current?.querySelector("[data-radix-scroll-area-viewport]");
+    if (isThinking) {
+      // Reveal the Cogitator loader at the bottom while the GM thinks.
       if (el) el.scrollTop = el.scrollHeight;
+    } else if (lastMsgRef.current) {
+      // A new narrative arrived — bring its start into view so the player
+      // reads top-down, then scrolls to the choices at the end.
+      lastMsgRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [game.history, isThinking]);
+  }, [game.history.length, isThinking]);
 
   useEffect(() => {
     if (!apiKey || initialActionsRan.current || showIntro) return;
@@ -288,9 +295,10 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
             {game.history.map((msg, i) => (
               <motion.div
                 key={i}
+                ref={i === game.history.length - 1 ? lastMsgRef : undefined}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={cn("flex flex-col gap-2", msg.role === "user" ? "items-end" : "items-start")}
+                className={cn("flex flex-col gap-2 scroll-mt-4", msg.role === "user" ? "items-end" : "items-start")}
               >
                 {msg.role === "ai" ? (
                   <div className="space-y-4 sm:space-y-6 w-full">
@@ -384,47 +392,41 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                 </div>
               </motion.div>
             )}
+
+            {/* Choices flow at the end of the narrative — scroll down to reach
+                them after reading, so the story gets the full window. */}
+            {!isThinking && latestChoices && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col gap-2 pt-2"
+              >
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70 font-bold mb-1 flex items-center gap-2">
+                  <ChevronRight size={12} className="text-primary" /> Choose Your Action
+                </div>
+                {Object.entries(latestChoices).map(([key, value]: [string, string]) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    className="w-full h-auto py-3 px-4 text-left flex items-start gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal"
+                    onClick={() => handleAction(value)}
+                  >
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                    >
+                      {key}
+                    </Badge>
+                    <span className="flex-1 min-w-0 text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 break-words">
+                      {value}
+                    </span>
+                  </Button>
+                ))}
+              </motion.div>
+            )}
           </div>
         </ScrollArea>
       </div>
-
-      {/* ── Pinned Choices ── */}
-      <AnimatePresence>
-        {(latestChoices || isThinking) && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="border-t border-border/50 bg-card/80 backdrop-blur-md shrink-0 px-3 py-2 sm:px-6 sm:py-3"
-          >
-            <div className="max-w-3xl mx-auto flex flex-col gap-1.5 sm:gap-2">
-              {isThinking
-                ? ["A", "B", "C", "D"].map((k) => (
-                    <div key={k} className="h-12 rounded-md border border-border/40 bg-secondary/30 animate-pulse" />
-                  ))
-                : latestChoices && Object.entries(latestChoices).map(([key, value]: [string, string]) => (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      disabled={isThinking}
-                      className="w-full h-auto py-3 px-4 text-left flex items-start gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal"
-                      onClick={() => handleAction(value)}
-                    >
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
-                      >
-                        {key}
-                      </Badge>
-                      <span className="flex-1 min-w-0 text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 break-words">
-                        {value}
-                      </span>
-                    </Button>
-                  ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Input Area ── */}
       <div className="p-2 sm:p-3 border-t border-border bg-card/50 backdrop-blur-md shrink-0">
