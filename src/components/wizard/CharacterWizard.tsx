@@ -298,6 +298,25 @@ const SKILLS = [
   "Perception", "Barter", "Deception", "Charm",
 ];
 
+const SKILL_DESCRIPTIONS: Record<string, string> = {
+  "Athletics": "Running, climbing, leaping, and raw physical feats.",
+  "Intimidation": "Cow foes and break morale through sheer menace.",
+  "Stealth": "Move unseen, set ambushes, avoid detection.",
+  "Piloting": "Drive and fly vehicles, walkers, and void-craft.",
+  "Sleight of Hand": "Pick pockets, palm objects, plant evidence.",
+  "Tech-Use": "Operate, hack, and repair machines and cogitators.",
+  "Medicae": "Treat wounds and drag the dying back from the brink.",
+  "Lore": "Recall history, religion, and forbidden knowledge.",
+  "Coercion": "Interrogate and force compliance under pressure.",
+  "Scrutiny": "See through lies and notice telling details.",
+  "Survival": "Endure the wilds, track prey, find shelter.",
+  "Investigation": "Search scenes and piece together clues.",
+  "Perception": "Notice danger, sounds, and hidden threats.",
+  "Barter": "Haggle prices and broker shrewd deals.",
+  "Deception": "Lie, disguise, and mislead convincingly.",
+  "Charm": "Win favor and trust with warmth and wit.",
+};
+
 // Step map:
 // 0 = Quick Start
 // 1 = Identity & Origins
@@ -569,17 +588,28 @@ export default function CharacterWizard({
                     {selectedSkills.length} / 3
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {SKILLS.map((s) => (
-                    <Button
-                      key={s}
-                      variant={selectedSkills.includes(s) ? "default" : "outline"}
-                      className={cn("justify-start text-[11px] uppercase tracking-widest h-11 border-border/50", selectedSkills.includes(s) && "border-primary font-bold")}
-                      onClick={() => toggleSkill(s)}
-                    >
-                      {s}
-                    </Button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SKILLS.map((s) => {
+                    const active = selectedSkills.includes(s);
+                    return (
+                      <Button
+                        key={s}
+                        variant={active ? "default" : "outline"}
+                        className={cn(
+                          "h-auto py-2.5 px-3 flex flex-col items-start gap-0.5 text-left whitespace-normal border-border/50",
+                          active && "border-primary"
+                        )}
+                        onClick={() => toggleSkill(s)}
+                      >
+                        <span className={cn("text-[11px] uppercase tracking-widest font-bold", active ? "text-white" : "")}>
+                          {s}
+                        </span>
+                        <span className={cn("text-[9px] normal-case tracking-normal leading-snug", active ? "text-white/80" : "text-muted-foreground")}>
+                          {SKILL_DESCRIPTIONS[s]}
+                        </span>
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             </StepWrapper>
