@@ -66,4 +66,6 @@ export interface Settings {
   fontFamily: string;
   audioEnabled: boolean;
   narratorVoice: string;
+  musicEnabled: boolean;
+  musicVolume: number;
 }

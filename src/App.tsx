@@ -3,20 +3,21 @@ import { useGameStore } from './store/useGameStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { Skull, Settings, Play, FolderOpen, Share2, X, Key, ExternalLink, CheckCircle } from 'lucide-react';
+import { Skull, Settings, Play, FolderOpen, Share2, X, Key, ExternalLink, CheckCircle, Music, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import CharacterWizard from './components/wizard/CharacterWizard';
 import GameScreen from './components/game/GameScreen';
 import LoadGameMenu from './components/menu/LoadGameMenu';
+import { startAmbient, stopAmbient, setAmbientVolume } from './lib/ambient';
 
 import { cn } from '@/lib/utils';
 
 export default function App() {
   const {
-    theme, fontSize, fontFamily, apiKey,
-    setApiKey, setTheme, setFontSize, setFontFamily,
+    theme, fontSize, fontFamily, apiKey, musicEnabled, musicVolume,
+    setApiKey, setTheme, setFontSize, setFontFamily, setMusicEnabled, setMusicVolume,
   } = useSettingsStore();
   const [view, setView] = useState<'menu' | 'wizard' | 'game' | 'settings' | 'load' | 'onboarding'>(
     apiKey ? 'menu' : 'onboarding'
@@ -42,6 +43,22 @@ export default function App() {
       window.removeEventListener('offline', handleOffline);
     };
   }, [theme]);
+
+  // Procedural ambient music: start/stop with the toggle, track volume live.
+  useEffect(() => {
+    if (musicEnabled) {
+      startAmbient(musicVolume);
+    } else {
+      stopAmbient();
+    }
+  }, [musicEnabled]);
+
+  useEffect(() => {
+    if (musicEnabled) setAmbientVolume(musicVolume);
+  }, [musicVolume, musicEnabled]);
+
+  // Stop audio cleanly if the app unmounts.
+  useEffect(() => () => stopAmbient(), []);
 
   const handleShare = () => {
     const gameState = useGameStore.getState();
@@ -226,7 +243,7 @@ export default function App() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Script Family</label>
-                    <select 
+                    <select
                       className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm outline-none"
                       value={fontFamily}
                       onChange={(e) => setFontFamily(e.target.value)}
@@ -235,6 +252,47 @@ export default function App() {
                       <option value="Playfair Display">High Gothic (Serif)</option>
                       <option value="JetBrains Mono">Cogitator (Mono)</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Ambient Music */}
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Music size={14} className="text-primary" /> Ambient Vox-Choir
+                    </label>
+                    <button
+                      role="switch"
+                      aria-checked={musicEnabled}
+                      onClick={() => setMusicEnabled(!musicEnabled)}
+                      className={cn(
+                        "relative w-12 h-6 rounded-full transition-colors shrink-0",
+                        musicEnabled ? "bg-primary" : "bg-secondary border border-border"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform",
+                          musicEnabled && "translate-x-6"
+                        )}
+                      />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    A procedural grimdark drone, generated on-device. No downloads, no data — pure atmosphere.
+                  </p>
+                  <div className={cn("flex items-center gap-3 transition-opacity", !musicEnabled && "opacity-40 pointer-events-none")}>
+                    <Volume2 size={16} className="text-muted-foreground shrink-0" />
+                    <input
+                      type="range" min="0" max="100"
+                      className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                      value={Math.round(musicVolume * 100)}
+                      onChange={(e) => setMusicVolume(parseInt(e.target.value) / 100)}
+                      disabled={!musicEnabled}
+                    />
+                    <span className="text-[10px] font-mono text-muted-foreground w-8 text-right shrink-0">
+                      {Math.round(musicVolume * 100)}%
+                    </span>
                   </div>
                 </div>
 

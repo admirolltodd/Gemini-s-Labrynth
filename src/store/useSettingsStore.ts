@@ -9,6 +9,8 @@ interface SettingsState extends Settings {
   setFontFamily: (family: string) => void;
   setAudioEnabled: (enabled: boolean) => void;
   setNarratorVoice: (voice: string) => void;
+  setMusicEnabled: (enabled: boolean) => void;
+  setMusicVolume: (volume: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,12 +27,16 @@ export const useSettingsStore = create<SettingsState>()(
       fontFamily: "Inter",
       audioEnabled: false,
       narratorVoice: "Kore",
+      musicEnabled: false,
+      musicVolume: 0.4,
       setApiKey: (apiKey) => set({ apiKey }),
       setTheme: (theme) => set({ theme }),
       setFontSize: (fontSize) => set({ fontSize }),
       setFontFamily: (fontFamily) => set({ fontFamily }),
       setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
       setNarratorVoice: (narratorVoice) => set({ narratorVoice }),
+      setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
+      setMusicVolume: (musicVolume) => set({ musicVolume }),
     }),
     {
       name: "grim-echoes-settings",
