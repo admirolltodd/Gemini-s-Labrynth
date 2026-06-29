@@ -243,6 +243,10 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   return (
     <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
 
+      {/* Moral atmosphere — the screen darkens with corruption/low loyalty,
+          warms with the Emperor's grace (high loyalty + clean conscience). */}
+      <MoralAtmosphere corruption={game.corruption} loyalty={game.companion.loyalty} hasCompanion={!!game.companion.name} />
+
       {/* ── Top Bar ── */}
       <div className="h-12 border-b border-border flex items-center justify-between px-3 sm:px-6 bg-card/30 backdrop-blur-sm z-10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -890,6 +894,47 @@ function IntroBody({ children, delay = 0 }: { children: React.ReactNode; delay?:
     >
       {children}
     </motion.p>
+  );
+}
+
+function MoralAtmosphere({ corruption, loyalty, hasCompanion }: { corruption: number; loyalty: number; hasCompanion: boolean }) {
+  // corruption 0–10 (higher = worse). loyalty 0–100 (50 neutral).
+  const corruptN = Math.min(1, Math.max(0, corruption) / 10);
+  const lowLoyalty = hasCompanion ? Math.max(0, (50 - loyalty) / 50) : 0;
+  const highLoyalty = hasCompanion ? Math.max(0, (loyalty - 60) / 40) : 0;
+
+  // Darkness rises with corruption and with treating your companion badly.
+  const dark = Math.min(1, corruptN * 0.85 + lowLoyalty * 0.45);
+  // Grace: earned through loyalty, snuffed out by corruption.
+  const grace = Math.min(1, highLoyalty * (1 - corruptN) * 0.9);
+
+  return (
+    <>
+      {/* Corruption: oppressive crimson vignette (edges only, center stays legible) */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[55]"
+        animate={{ opacity: dark }}
+        transition={{ duration: 1.6 }}
+        style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0) 38%, rgba(28,0,0,0.6) 100%)" }}
+      />
+      {/* Corruption: faint global crimson multiply for a sickly cast */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[55] mix-blend-multiply"
+        animate={{ opacity: dark * 0.3 }}
+        transition={{ duration: 1.6 }}
+        style={{ background: "rgb(90,14,14)" }}
+      />
+      {/* Grace: warm golden light from above */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[55] mix-blend-soft-light"
+        animate={{ opacity: grace }}
+        transition={{ duration: 1.6 }}
+        style={{ background: "radial-gradient(ellipse at top, rgba(255,224,150,0.85) 0%, rgba(255,224,150,0) 55%)" }}
+      />
+    </>
   );
 }
 

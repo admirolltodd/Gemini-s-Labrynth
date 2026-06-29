@@ -23,9 +23,28 @@ import {
   Sparkles,
   UserPlus,
 } from "lucide-react";
-import { Archetype, Difficulty, Stats } from "../../types/game";
+import { Archetype, Difficulty, Stats, Companion } from "../../types/game";
 import { QuickStartCharacter } from "../../lib/gemini";
 import { useSettingsStore } from "../../store/useSettingsStore";
+
+// Every operative deploys with a thematic companion so loyalty actually
+// matters and the GM has someone concrete to write into the story.
+const STARTING_COMPANIONS: Record<string, Companion> = {
+  "Guardsman Veteran": { name: "Corporal Vane", description: "A grizzled squadmate who has bled beside you on a dozen worlds.", loyalty: 55 },
+  "Exiled Psyker": { name: "Sef", description: "A mute, warp-touched waif who trails you, sensing a kindred damnation.", loyalty: 50 },
+  "Hive Ganger": { name: "Rat", description: "A wiry underhive scav with quick fingers and quicker instincts.", loyalty: 50 },
+  "Rogue Trader Scion": { name: "Vex Carthault", description: "A void-hardened house retainer sworn to keep you alive — and watched.", loyalty: 50 },
+  "Penitent Sister": { name: "Sister Auceline", description: "A fellow penitent who shares your road of ash and absolution.", loyalty: 55 },
+  "Tech-Priest Initiate": { name: "Servo-skull XV-2", description: "A chattering brass servo-skull bound to your service, heavy with cant and data.", loyalty: 60 },
+  "Criminal Conscript": { name: "Dolan", description: "A fellow penal legionnaire with a shared sentence and a shared grudge.", loyalty: 45 },
+  "Civilian Survivor": { name: "Mira", description: "A fellow refugee you pulled from the rubble; she has not left your side.", loyalty: 55 },
+};
+
+const DEFAULT_COMPANION: Companion = {
+  name: "Kell",
+  description: "A wary drifter drawn to your cause, watching to see what you become.",
+  loyalty: 50,
+};
 
 const LOCAL_QUICK_STARTS: QuickStartCharacter[] = [
   {
@@ -354,6 +373,7 @@ export default function CharacterWizard({
       skills: selectedSkills,
       talents: [selectedTalent],
       chapter: "Prologue",
+      companion: archetype ? (STARTING_COMPANIONS[archetype] ?? DEFAULT_COMPANION) : DEFAULT_COMPANION,
       history: [],
       campaignLog: [],
     });
