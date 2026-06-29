@@ -1,5 +1,49 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { GameState, Stats } from "../types/game";
+import { GameState, Stats, CampaignLogEntry } from "../types/game";
+
+// Long-term memory is injected once every N turns (the rolling 3-turn window
+// still goes on every turn). This is the "distinct sense of long memory".
+const MEMORY_EVERY_N_TURNS = 6;
+// Cap how many past entries we send so a very long campaign can't balloon tokens.
+const MEMORY_MAX_ENTRIES = 40;
+
+// Build one ultra-compact log record from a completed turn. Pure data derived
+// from the action + the model's own state_updates/roll_log — no schema change.
+export function buildCampaignEntry(
+  turnNumber: number,
+  action: string,
+  chapter: string,
+  result: any,
+): CampaignLogEntry {
+  const u = (result && result.state_updates) || {};
+  const rollText: string = (result && result.roll_log) || "";
+  const entry: CampaignLogEntry = {
+    t: turnNumber,
+    act: action.length > 72 ? action.slice(0, 69) + "…" : action,
+  };
+  if (chapter) entry.ch = chapter;
+  if (/->\s*success|→\s*success|\bsuccess\b/i.test(rollText)) entry.roll = "✓";
+  else if (/->\s*fail|→\s*fail|\bfail/i.test(rollText)) entry.roll = "✗";
+  if (u.xp_gain) entry.xp = u.xp_gain;
+  if (u.corruption_gain) entry.cor = u.corruption_gain;
+  if (u.hp_change) entry.hp = u.hp_change;
+  if (u.loyalty_change) entry.loy = u.loyalty_change;
+  if (Array.isArray(u.inventory_add) && u.inventory_add.length) entry.got = u.inventory_add;
+  if (u.corruption_gain > 0) entry.mood = "D";
+  else if (u.loyalty_change > 0) entry.mood = "L";
+  return entry;
+}
+
+// Should we inject the long-term memory digest on this turn?
+function shouldInjectMemory(log?: CampaignLogEntry[]): boolean {
+  return !!log && log.length > 0 && log.length % MEMORY_EVERY_N_TURNS === 0;
+}
+
+// Render the persistent campaign log as compact one-line JSON records.
+function buildCampaignMemory(log?: CampaignLogEntry[]): string {
+  if (!log || log.length === 0) return "";
+  return log.slice(-MEMORY_MAX_ENTRIES).map((e) => JSON.stringify(e)).join("\n");
+}
 
 const SYSTEM_PROMPT_HEADER = `
 You are the elite Game Master for "Grim Echoes: 40K Solo". 
@@ -90,6 +134,11 @@ export async function processGameTurn(
 
   const recentHistory = buildRecentHistory(currentState.history);
 
+  // Long-term memory digest — only every Nth turn, to keep token cost low.
+  const campaignMemory = shouldInjectMemory(currentState.campaignLog)
+    ? buildCampaignMemory(currentState.campaignLog)
+    : "";
+
   // Construct context
   const context = `
 Current Operative: ${currentState.archetype}
@@ -102,6 +151,7 @@ Talents: ${currentState.talents.join(", ")}
 Inventory: ${currentState.gear.join(", ")}
 Companion: ${currentState.companion.name} (Loyalty: ${currentState.companion.loyalty})
 Chapter: ${currentState.chapter}
+${campaignMemory ? `\nCAMPAIGN MEMORY (compact log of the operative's past decisions — reference earlier choices, pay off their consequences, and acknowledge how far they have come. Fields: t=turn, act=action, roll ✓/✗, xp/cor/hp/loy=changes, got=items, mood L/D=light/dark):\n${campaignMemory}\n` : ""}
 ${recentHistory ? `\nRecent Events (oldest to newest):\n${recentHistory}` : `Last Scene Summary: ${currentState.last_scene_summary}`}
 
 Player Action: ${action}

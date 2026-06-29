@@ -355,6 +355,7 @@ export default function CharacterWizard({
       talents: [selectedTalent],
       chapter: "Prologue",
       history: [],
+      campaignLog: [],
     });
     onComplete();
   };

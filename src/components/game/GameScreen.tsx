@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Stats } from "../../types/game";
-import { processGameTurn } from "../../lib/gemini";
+import { processGameTurn, buildCampaignEntry } from "../../lib/gemini";
 import InventoryPanel from "./InventoryPanel";
 import CompanionPanel from "./CompanionPanel";
 import SkillsPanel from "./SkillsPanel";
@@ -143,6 +143,17 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
       const result = await processGameTurn(apiKey, action, game);
       const updates = result.state_updates;
 
+      const newChapter = updates.chapter_update || game.chapter;
+
+      // Append a compact record of this decision to the persistent campaign
+      // log (skip silent system prompts — only real player decisions count).
+      const campaignLog = silent
+        ? game.campaignLog
+        : [
+            ...game.campaignLog,
+            buildCampaignEntry(game.campaignLog.length + 1, action, newChapter, result),
+          ];
+
       game.setGameState({
         hp: {
           current: Math.max(0, Math.min(game.hp.max, game.hp.current + (updates.hp_change || 0))),
@@ -161,9 +172,10 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         gear: [...game.gear, ...(updates.inventory_add || [])].filter(
           (item) => !(updates.inventory_remove || []).includes(item),
         ),
-        chapter: updates.chapter_update || game.chapter,
+        chapter: newChapter,
         active_threats: updates.active_threats_update || game.active_threats,
         last_scene_summary: result.narrative,
+        campaignLog,
       });
 
       game.addHistory({

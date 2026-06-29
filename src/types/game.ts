@@ -30,6 +30,22 @@ export interface Companion {
   loyalty: number;
 }
 
+// One ultra-compact record per player turn, persisted for the life of the
+// campaign. Used to give the AI long-term memory of past decisions. Optional
+// fields are omitted when zero/empty to keep the JSON tiny.
+export interface CampaignLogEntry {
+  t: number;            // turn number
+  ch?: string;          // chapter
+  act: string;          // the player's decision (truncated)
+  roll?: '✓' | '✗';     // roll outcome, if a check happened
+  xp?: number;          // xp gained
+  cor?: number;         // corruption gained
+  hp?: number;          // hp change
+  loy?: number;         // companion loyalty change
+  got?: string[];       // items acquired
+  mood?: 'L' | 'D';     // light / dark leaning of the choice
+}
+
 export interface GameState {
   version: string;
   name: string;
@@ -49,7 +65,8 @@ export interface GameState {
   chapter: string;
   last_scene_summary: string;
   active_threats: string[];
-  history: { 
+  campaignLog: CampaignLogEntry[];
+  history: {
     role: 'user' | 'ai'; 
     content: string; 
     narrative?: string; 

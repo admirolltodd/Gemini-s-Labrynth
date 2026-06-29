@@ -60,6 +60,7 @@ const INITIAL_STATE: GameState = {
   chapter: '',
   last_scene_summary: '',
   active_threats: [],
+  campaignLog: [],
   history: [],
 };
 
