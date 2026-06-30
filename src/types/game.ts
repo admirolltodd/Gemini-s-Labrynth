@@ -30,6 +30,13 @@ export interface Companion {
   loyalty: number;
 }
 
+// A carried weapon. maxAmmo === 0 denotes a melee weapon (no rounds).
+export interface Weapon {
+  name: string;
+  ammo: number;
+  maxAmmo: number;
+}
+
 // One ultra-compact record per player turn, persisted for the life of the
 // campaign. Used to give the AI long-term memory of past decisions. Optional
 // fields are omitted when zero/empty to keep the JSON tiny.
@@ -55,6 +62,9 @@ export interface GameState {
   setting: string;
   stats: Stats;
   hp: { current: number; max: number };
+  fatigue: number;          // 0–4 tier (exertion / sleeplessness / blood loss)
+  afflictions: string[];    // active status effects (Bleeding, Concussed, Poisoned…)
+  weapons: Weapon[];        // tracked arsenal with ammo
   skills: string[];
   talents: string[];
   gear: string[];

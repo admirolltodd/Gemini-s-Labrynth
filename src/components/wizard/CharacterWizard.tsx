@@ -23,9 +23,23 @@ import {
   Sparkles,
   UserPlus,
 } from "lucide-react";
-import { Archetype, Difficulty, Stats, Companion } from "../../types/game";
+import { Archetype, Difficulty, Stats, Companion, Weapon } from "../../types/game";
 import { QuickStartCharacter } from "../../lib/gemini";
 import { useSettingsStore } from "../../store/useSettingsStore";
+
+// Each operative deploys with a tracked arsenal (melee weapons have maxAmmo 0).
+const STARTING_WEAPONS: Record<string, Weapon[]> = {
+  "Guardsman Veteran": [{ name: "Lasgun", ammo: 40, maxAmmo: 40 }, { name: "Combat Knife", ammo: 0, maxAmmo: 0 }],
+  "Exiled Psyker": [{ name: "Stub Pistol", ammo: 6, maxAmmo: 6 }, { name: "Force Stave", ammo: 0, maxAmmo: 0 }],
+  "Hive Ganger": [{ name: "Autopistol", ammo: 15, maxAmmo: 15 }, { name: "Serrated Shiv", ammo: 0, maxAmmo: 0 }],
+  "Rogue Trader Scion": [{ name: "Bolt Pistol", ammo: 8, maxAmmo: 8 }, { name: "Power Sword", ammo: 0, maxAmmo: 0 }],
+  "Penitent Sister": [{ name: "Boltgun", ammo: 24, maxAmmo: 24 }, { name: "Chainsword", ammo: 0, maxAmmo: 0 }],
+  "Tech-Priest Initiate": [{ name: "Laspistol", ammo: 20, maxAmmo: 20 }, { name: "Mechadendrite", ammo: 0, maxAmmo: 0 }],
+  "Criminal Conscript": [{ name: "Lasgun", ammo: 30, maxAmmo: 30 }, { name: "Improvised Club", ammo: 0, maxAmmo: 0 }],
+  "Civilian Survivor": [{ name: "Stub Revolver", ammo: 6, maxAmmo: 6 }, { name: "Scrap Pipe", ammo: 0, maxAmmo: 0 }],
+};
+
+const DEFAULT_WEAPONS: Weapon[] = [{ name: "Stub Pistol", ammo: 6, maxAmmo: 6 }, { name: "Combat Knife", ammo: 0, maxAmmo: 0 }];
 
 // Every operative deploys with a thematic companion so loyalty actually
 // matters and the GM has someone concrete to write into the story.
@@ -393,6 +407,9 @@ export default function CharacterWizard({
       talents: [selectedTalent],
       chapter: "Prologue",
       companion: archetype ? (STARTING_COMPANIONS[archetype] ?? DEFAULT_COMPANION) : DEFAULT_COMPANION,
+      weapons: archetype ? (STARTING_WEAPONS[archetype] ?? DEFAULT_WEAPONS) : DEFAULT_WEAPONS,
+      fatigue: 0,
+      afflictions: [],
       history: [],
       campaignLog: [],
     });

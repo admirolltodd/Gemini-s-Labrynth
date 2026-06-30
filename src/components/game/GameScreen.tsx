@@ -21,6 +21,7 @@ import {
   Check,
   BarChart2,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ import { processGameTurn, buildCampaignEntry } from "../../lib/gemini";
 import InventoryPanel from "./InventoryPanel";
 import CompanionPanel from "./CompanionPanel";
 import SkillsPanel from "./SkillsPanel";
+import SessionManifestPanel from "./SessionManifestPanel";
 
 export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const game = useGameStore();
@@ -44,6 +46,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
+  const [isManifestOpen, setIsManifestOpen] = useState(false);
   const [loyaltyMessage, setLoyaltyMessage] = useState<{ value: number; label: string } | null>(null);
   const [loadingPhrase, setLoadingPhrase] = useState("Consulting the Imperial Tarot...");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -162,11 +165,25 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
             buildCampaignEntry(game.campaignLog.length + 1, action, newChapter, result),
           ];
 
+      // Afflictions: add new, remove cured, dedupe.
+      const afflictionsAfter = Array.from(
+        new Set(
+          [...(game.afflictions || []), ...((updates.afflictions_add as string[]) || [])].filter(
+            (a) => !((updates.afflictions_remove as string[]) || []).includes(a),
+          ),
+        ),
+      );
+
       game.setGameState({
         hp: {
           current: Math.max(0, Math.min(game.hp.max, game.hp.current + (updates.hp_change || 0))),
           max: game.hp.max,
         },
+        fatigue: Math.max(0, Math.min(4, (game.fatigue || 0) + (updates.fatigue_change || 0))),
+        afflictions: afflictionsAfter,
+        weapons: Array.isArray(updates.weapons_update) && updates.weapons_update.length > 0
+          ? updates.weapons_update
+          : game.weapons,
         xp: {
           total: game.xp.total + (updates.xp_gain || 0),
           unspent: game.xp.unspent + (updates.xp_gain || 0),
@@ -476,6 +493,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
             </Button>
           </div>
           <div className="flex gap-1.5">
+            <ActionButton icon={<ClipboardList size={16} />} label="Manifest" onClick={() => setIsManifestOpen(true)} />
             <ActionButton icon={<Package size={16} />} label="Inventory" onClick={() => setIsInventoryOpen(true)} />
             <ActionButton icon={<Users size={16} />} label="Companion" onClick={() => setIsCompanionOpen(true)} />
             <ActionButton icon={<BarChart2 size={16} />} label="Stats & Skills" onClick={() => setIsSkillsOpen(true)} />
@@ -609,6 +627,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         onClose={() => setIsSkillsOpen(false)}
         onAction={(action) => { setIsSkillsOpen(false); handleAction(action, true); }}
       />
+      <SessionManifestPanel isOpen={isManifestOpen} onClose={() => setIsManifestOpen(false)} />
 
       {/* NES-style intro overlay */}
       <AnimatePresence>
