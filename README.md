@@ -1,108 +1,83 @@
 # Grim Echoes: 40K Solo RPG
 
-**Grim Echoes** is a narrative-driven, solo role-playing experience set in the grim darkness of the far future. Powered by the Gemini AI, it functions as a digital Game Master, handling narrative, rules enforcement, dice rolls, and atmospheric storytelling.
+Grim Echoes is a narrative-driven, solo role-playing game set in the grim darkness of the far future. Instead of a rulebook and dice on a table, the Gemini API acts as your Game Master — narrating scenes, enforcing a Warhammer-40,000-inspired ruleset, rolling dice, and reacting to the choices you make. You create a character, recruit a companion, and play through branching missions where every decision (and every roll) shapes the story.
 
-## 🌌 Features
+The game runs as a single-page web app and can also be packaged as a native Linux desktop app (Electron) or a native Android app (Capacitor), so a campaign can travel between devices.
 
-- **AI Game Master**: Powered by Gemini for lore-accurate, reactive storytelling.
-- **Dynamic Rules System**: Based on the Warhammer 40,000 Solo RPG v2.0 ruleset.
-- **Companion System**: Recruit companions with unique personalities and loyalty levels that influence game choices.
-- **Grimdark UI**: A high-contrast, atmospheric interface designed for immersion.
-- **Narrative Distinction**: Specialized "Vox-Link" UI for character dialogue to distinguish it from atmospheric narration.
-- **Cross-Platform**: Run in your browser via AI Studio or as a native desktop application on Linux.
+## Features
 
----
+- **AI Game Master** — Gemini handles narration, dialogue, dice rolls, and branching choices in a consistent, lore-accurate voice.
+- **Character Wizard** — build a character and choose from a set of "Sanctioned Skills," each with its own in-fiction description.
+- **Companion system** — recruit companions with distinct personalities and loyalty that shifts with your choices.
+- **Persistent Campaign Log** — a long-term memory digest is fed back to the AI periodically so it remembers events from many turns ago, not just the last few.
+- **Tactical Vox map panel** — a side panel summarizing the active theatre, threats, difficulty, and companion status.
+- **Session Manifest panel** — surfaces HP, fatigue, afflictions, weapons/gear, and active penalties at a glance.
+- **Inventory, Stats & Skills panels**, a save/load menu, and an in-game difficulty selector.
+- **Procedural grimdark ambient music** — generated audio, no shipped audio assets.
+- **Save backup & restore** — export saves to a portable JSON file and share it (e.g. to Google Drive, email, or any app) via the OS share sheet; import it back later or on a new device. No accounts or OAuth involved, and the exported bundle never includes your API key.
+- **Cross-platform packaging**:
+  - Runs in any modern browser via Vite.
+  - Builds to a single portable HTML file ("universal applet") that runs with no server.
+  - Packages as a native Linux desktop app via Electron (`.deb` / `.AppImage`).
+  - Packages as a native Android app via Capacitor, with a GitHub Actions workflow (`.github/workflows/android-build.yml`) that builds and publishes a debug APK on every push.
 
-## 🐧 Linux Installation (Ubuntu 25 / 24.04 / 22.04)
+## Tech Stack
 
-This application is built using React and Electron, allowing for a native desktop experience on Linux. Follow these steps to build and install it on your system.
+- TypeScript, React 19, Vite 6
+- Zustand for state management
+- Tailwind CSS v4
+- Gemini API (`@google/genai`) as the AI Game Master
+- Electron + electron-builder for Linux desktop packaging
+- Capacitor (`@capacitor/core`, `@capacitor/android`, `@capacitor/filesystem`, `@capacitor/share`) for Android packaging
 
-### 1. Prerequisite: System Libraries
-Electron requires several graphical and system libraries that are not always present on minimal or server-based Ubuntu installations. 
+## Requirements
 
-**Required libraries include:**
-- GTK+ 3 (libgtk-3-0)
-- NSS (libnss3)
-- ALSA (libasound2)
-- Mesa/DRM (libgbm1, libdrm2)
+- Node.js 20 or 22
+- A **Gemini API key** ([Google AI Studio](https://aistudio.google.com/)) — required to actually play, since the AI Game Master drives all narration and rules resolution. The app uses a bring-your-own-key model: enter your key in the in-app Settings menu (stored locally on-device) or supply `GEMINI_API_KEY` via environment variable for local dev. The key is deliberately never baked into shipped web/Electron/APK builds and is never included in save backups.
 
-### 2. Automated Installation (Recommended)
-We have provided a comprehensive shell script that updates your system, installs the correct Node.js version, fetches all dependencies, and builds the application.
+## How to Run
 
-1.  **Download/Clone** this repository to your local machine.
-2.  **Open a Terminal** in the root of the project.
-3.  **Make the script executable**:
-    ```bash
-    chmod +x setup-ubuntu.sh
-    ```
-4.  **Run the script**:
-    ```bash
-    ./setup-ubuntu.sh
-    ```
-
-The script will ask for your `sudo` password to install the necessary system libraries.
-
-### 3. Manual Build Process
-If you prefer to handle the steps manually:
-
-1.  **Install Node.js 22**:
-    ```bash
-    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-    ```
-2.  **Install System Dependencies**:
-    ```bash
-    sudo apt-get update && sudo apt-get install -y \
-      libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
-      libxkbcommon0 libmesa-glx0 libasound2 libgtk-3-0 libgbm1
-    ```
-3.  **Install NPM Packages**:
-    ```bash
-    npm install
-    ```
-4.  **Build the Electron App**:
-    ```bash
-    export ELECTRON=true
-    npm run build:electron
-    ```
-
-### 4. Running the Application
-After the build process completes, your installers are located in the `release/` folder.
-
--   **Install .deb package**: `sudo dpkg -i release/*.deb`
--   **Run AppImage**: `./release/*.AppImage` (Ensure it is executable first with `chmod +x`).
-
----
-
-## 🛠️ Development & Web Use
-
-To run the game in a web browser for development or quick play:
-
-1.  **Set your API Key**:
-    Copy `.env.example` to `.env` and add your `GEMINI_API_KEY`.
-2.  **Run Dev Server**:
-    ```bash
-    npm run dev
-    ```
-3.  **Access**: Open `http://localhost:3000` in your browser.
-
-### 📦 Universal Applet (Single HTML File)
-You can build the entire game into a single, portable HTML file that runs anywhere without a server. This is the default build mode.
+### Web (development)
 
 ```bash
-# Optional: Bake your API key into the file
-export GEMINI_API_KEY="your_key_here"
+npm install
+npm run dev
+```
 
+Open `http://localhost:3000`. Copy `.env.example` to `.env` and set `GEMINI_API_KEY`, or enter your key in the in-app Settings menu.
+
+### Web (single-file build)
+
+```bash
 npm run build
 ```
-The resulting `dist/index.html` is a "universal applet". 
 
-**Note on Connection:**
-If you see "The Warp interferes with your connection" error:
-1.  **Enter API Key**: Open the **Settings** menu in the app and paste your Gemini API key.
-2.  **CORS/Browser Restrictions**: Ensure your browser allows network requests from local files. Some browsers (like Chrome) may require a flag or extension to allow local files to reach the Google AI API, though standard HTTPS usually works.
+Produces `dist/index.html` — a self-contained "universal applet" that runs anywhere without a server.
 
----
+### Linux desktop (Electron)
 
-## 📜 Legal Notice
+An automated setup script is included:
+
+```bash
+chmod +x setup-ubuntu.sh
+./setup-ubuntu.sh
+```
+
+This installs Node.js and the system libraries Electron needs, then builds `.deb` and `.AppImage` installers (in `release/`). See [LINUX_INSTALL.md](LINUX_INSTALL.md) for the manual step-by-step process and troubleshooting missing-library errors.
+
+### Android (Capacitor)
+
+```bash
+npm run build:android
+npx cap open android
+```
+
+This builds the web assets in Capacitor mode and syncs them into the `android/` Gradle project, which can then be built or run from Android Studio. The included GitHub Actions workflow also builds a debug APK automatically and attaches it to a GitHub release for sideloading (e.g. via Obtainium).
+
+## Legal Notice
+
 This project is an unofficial fan creation. All Warhammer 40,000 imagery, lore, and related marks are trademarks or registered trademarks of Games Workshop Limited.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
