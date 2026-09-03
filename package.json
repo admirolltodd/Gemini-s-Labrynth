@@ -13,7 +13,8 @@
     "build:electron": "ELECTRON=true vite build && electron-builder",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-electron",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsx --test src/lib/*.test.ts"
   },
   "build": {
     "appId": "com.grimechoes.wh40k",

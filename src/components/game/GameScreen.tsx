@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
-import { Stats } from "../../types/game";
-import { processGameTurn, buildCampaignEntry } from "../../lib/gemini";
+import type { Check as SkillCheck, RollResult, Stats } from "../../types/game";
+import { processGameTurn, buildCampaignEntry, isRateLimitError } from "../../lib/gemini";
+import { clampDc, formatRollLog, resolveCheck, rollD20 } from "../../lib/dice";
+import { applyChronicleUpdate } from "../../lib/chronicle";
 import InventoryPanel from "./InventoryPanel";
 import CompanionPanel from "./CompanionPanel";
 import SkillsPanel from "./SkillsPanel";
@@ -63,15 +65,18 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     "Translating Noospheric battle echoes...",
   ];
 
-  // Derive the latest choices from history for the pinned panel
-  const latestChoices = useMemo<Record<string, string> | null>(() => {
+  // Derive the latest choices (and the GM's proposed checks) from history
+  const latest = useMemo<{ choices: Record<string, string>; checks: Record<string, SkillCheck | null> } | null>(() => {
     for (let i = game.history.length - 1; i >= 0; i--) {
-      if (game.history[i].role === "ai" && game.history[i].choices) {
-        return game.history[i].choices as Record<string, string>;
+      const entry = game.history[i];
+      if (entry.role === "ai" && entry.choices) {
+        return { choices: entry.choices, checks: entry.checks ?? {} };
       }
     }
     return null;
   }, [game.history]);
+  const latestChoices = latest?.choices ?? null;
+  const latestChecks = latest?.checks ?? null;
 
   const lastMsgRef = useRef<HTMLDivElement>(null);
 
@@ -141,29 +146,41 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
     }
   };
 
-  const handleAction = async (action: string, silent = false) => {
+  // Resolve a tagged choice with the engine's dice before the GM narrates it.
+  const handleChoice = (key: string, text: string) => {
+    const check = latestChecks?.[key];
+    handleAction(text, false, check ? resolveCheck(check, game) : undefined);
+  };
+
+  const handleAction = async (action: string, silent = false, roll?: RollResult) => {
     if (!action.trim() || isThinking) return;
     setLoadingPhrase(LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)]);
     setIsThinking(true);
     setInput("");
 
-    if (!silent && game.history.length > 0) game.addHistory({ role: "user", content: action });
+    if (!silent && game.history.length > 0) game.addHistory({ role: "user", content: action, roll });
+
+    // Custom actions carry a blind d20 so the GM can adjudicate without
+    // inventing the die. Silent system prompts (briefings) carry none.
+    const rawDie = !silent && !roll ? rollD20() : undefined;
 
     try {
       if (!apiKey) throw new Error("VOX-LINK FAILURE: No Gemini API Key. Open Settings to connect.");
-      const result = await processGameTurn(apiKey, action, game);
+      const result = await processGameTurn(apiKey, action, game, { roll, rawDie });
       const updates = result.state_updates;
 
       const newChapter = updates.chapter_update || game.chapter;
 
       // Append a compact record of this decision to the persistent campaign
       // log (skip silent system prompts — only real player decisions count).
+      const turnNumber = silent ? game.campaignLog.length : game.campaignLog.length + 1;
       const campaignLog = silent
         ? game.campaignLog
         : [
             ...game.campaignLog,
-            buildCampaignEntry(game.campaignLog.length + 1, action, newChapter, result),
+            buildCampaignEntry(turnNumber, action, newChapter, result, roll),
           ];
+      const chronicle = applyChronicleUpdate(game.chronicle, result.chronicle_update, turnNumber);
 
       // Afflictions: add new, remove cured, dedupe.
       const afflictionsAfter = Array.from(
@@ -201,13 +218,17 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         active_threats: updates.active_threats_update || game.active_threats,
         last_scene_summary: result.narrative,
         campaignLog,
+        chronicle,
       });
 
       game.addHistory({
         role: "ai",
         content: result.narrative,
         choices: result.choices,
-        narrative: result.roll_log,
+        checks: result.checks,
+        // The engine's roll already sits on the player's transmission; only a
+        // GM-adjudicated custom action brings its own roll log.
+        narrative: roll ? undefined : result.roll_log || undefined,
         dialogue: result.dialogue
           ? { speaker: result.dialogue_speaker, text: result.dialogue }
           : null,
@@ -219,7 +240,9 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
         content:
           error instanceof Error && error.message.startsWith("VOX-LINK")
             ? error.message
-            : `The Warp interferes with your connection. (${errDetail})`,
+            : isRateLimitError(error)
+              ? "VOX-LINK SATURATED: the free-tier vox-array is rate limited. Wait a minute, then retry your action."
+              : `The Warp interferes with your connection. (${errDetail})`,
       });
     } finally {
       setIsThinking(false);
@@ -387,10 +410,13 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-primary/20 border border-primary/30 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium text-primary shadow-sm max-w-[90%]">
-                    <span className="opacity-50 text-[9px] uppercase block mb-0.5">Transmission:</span>
-                    {msg.content}
-                  </div>
+                  <>
+                    <div className="bg-primary/20 border border-primary/30 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium text-primary shadow-sm max-w-[90%]">
+                      <span className="opacity-50 text-[9px] uppercase block mb-0.5">Transmission:</span>
+                      {msg.content}
+                    </div>
+                    {msg.roll && <RollLog text={formatRollLog(msg.roll)} />}
+                  </>
                 )}
               </motion.div>
             ))}
@@ -445,24 +471,34 @@ export default function GameScreen({ onBack }: { onBack?: () => void }) {
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70 font-bold mb-1 flex items-center gap-2">
                   <ChevronRight size={12} className="text-primary" /> Choose Your Action
                 </div>
-                {Object.entries(latestChoices).map(([key, value]: [string, string]) => (
-                  <Button
-                    key={key}
-                    variant="outline"
-                    className="w-full h-auto py-3 px-4 text-left flex items-start gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal"
-                    onClick={() => handleAction(value)}
-                  >
-                    <Badge
+                {Object.entries(latestChoices).map(([key, value]: [string, string]) => {
+                  const check = latestChecks?.[key] ?? null;
+                  return (
+                    <Button
+                      key={key}
                       variant="outline"
-                      className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                      className="w-full h-auto py-3 px-4 text-left flex items-start gap-3 border-border/70 bg-card/60 hover:border-primary hover:bg-primary/5 transition-all group whitespace-normal"
+                      onClick={() => handleChoice(key, value)}
                     >
-                      {key}
-                    </Badge>
-                    <span className="flex-1 min-w-0 text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 break-words">
-                      {value}
-                    </span>
-                  </Button>
-                ))}
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 mt-0.5 border-primary/50 text-primary bg-primary/5 font-bold tracking-widest text-[10px] h-6 w-7 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all"
+                      >
+                        {key}
+                      </Badge>
+                      <span className="flex-1 min-w-0 flex flex-col gap-1">
+                        <span className="text-sm font-medium leading-snug opacity-90 group-hover:opacity-100 break-words">
+                          {value}
+                        </span>
+                        {check && (
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/80">
+                            ⚂ {check.stat}{check.skill ? ` + ${check.skill}` : ""} · DC {clampDc(check.dc, game.difficulty)}
+                          </span>
+                        )}
+                      </span>
+                    </Button>
+                  );
+                })}
               </motion.div>
             )}
           </div>

@@ -1,10 +1,11 @@
 /**
- * Save backup / restore via a portable JSON file.
+ * Save backup / restore via a portable JSON file, plus Chronicle export.
  *
- * Export writes the player's saves to a file and opens the Android share
- * sheet, so they can pick "Save to Drive" (or any cloud / email). Import reads
- * a previously exported file back in. No accounts, no OAuth, no API keys — and
- * it doubles as a way to move an operative to a new phone.
+ * Export writes a file and opens the Android share sheet, so the player can
+ * pick "Save to Drive" (or any cloud / email). On the web it falls back to a
+ * download. Import reads a previously exported backup back in. No accounts,
+ * no OAuth, no API keys — and it doubles as a way to move an operative to a
+ * new phone.
  *
  * The API key is deliberately NOT included in the backup.
  */
@@ -12,6 +13,8 @@
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
+import { GameState } from "../types/game";
+import { chronicleFilename, renderChronicle } from "./chronicle";
 
 const SAVES_KEY = "grim-echoes-saves-v2";
 const GAME_KEY = "grim-echoes-game";
@@ -49,28 +52,25 @@ export function countSaves(): number {
 }
 
 /**
- * Export the backup. On Android, writes a file and opens the share sheet so
- * the user can save it to Drive. On the web, falls back to a file download.
+ * Hand a text file to the player. On Android, writes it and opens the share
+ * sheet; on the web (and Electron), triggers a download.
  */
-export async function exportBackup(): Promise<void> {
-  const json = buildBackupJson();
-  const filename = `grim-echoes-backup-${new Date().toISOString().slice(0, 10)}.json`;
-
+async function shareOrDownload(
+  filename: string,
+  content: string,
+  mime: string,
+  share: { title: string; text: string; dialogTitle: string },
+): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     const res = await Filesystem.writeFile({
       path: filename,
-      data: json,
+      data: content,
       directory: Directory.Cache,
       encoding: Encoding.UTF8,
     });
-    await Share.share({
-      title: "Grim Echoes Save Backup",
-      text: "Grim Echoes operative backup — save this to Google Drive.",
-      url: res.uri,
-      dialogTitle: "Back up your save",
-    });
+    await Share.share({ ...share, url: res.uri });
   } else {
-    const blob = new Blob([json], { type: "application/json" });
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -78,6 +78,26 @@ export async function exportBackup(): Promise<void> {
     a.click();
     URL.revokeObjectURL(url);
   }
+}
+
+/** Export the save backup (share sheet on Android, download elsewhere). */
+export async function exportBackup(): Promise<void> {
+  const filename = `grim-echoes-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  await shareOrDownload(filename, buildBackupJson(), "application/json", {
+    title: "Grim Echoes Save Backup",
+    text: "Grim Echoes operative backup — save this to Google Drive.",
+    dialogTitle: "Back up your save",
+  });
+}
+
+/** Export the operative's Chronicle as a markdown file. */
+export async function exportChronicle(state: GameState): Promise<void> {
+  const markdown = renderChronicle(state, { includeStatus: true });
+  await shareOrDownload(chronicleFilename(state), markdown, "text/markdown", {
+    title: "Grim Echoes Chronicle",
+    text: "The chronicle of your operative — every decision, every debt.",
+    dialogTitle: "Export your chronicle",
+  });
 }
 
 export interface ImportResult {

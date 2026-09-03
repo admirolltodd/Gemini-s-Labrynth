@@ -24,6 +24,8 @@ export interface Stats {
   INF: number;
 }
 
+export type StatKey = keyof Stats;
+
 export interface Companion {
   name: string;
   description: string;
@@ -35,6 +37,30 @@ export interface Weapon {
   name: string;
   ammo: number;
   maxAmmo: number;
+}
+
+// A skill check attached to a choice. The GM proposes it; the game engine
+// rolls it client-side (lib/dice.ts) so the dice are honest.
+export interface Check {
+  stat: StatKey;
+  skill: string | null;   // one of the operative's skills if it applies, else null
+  dc: number;
+}
+
+export type RollOutcome = 'crit-success' | 'success' | 'failure' | 'crit-failure';
+
+// A fully resolved engine roll. Kept on the history entry so the scroll can
+// show the die and the campaign log can record the exact outcome.
+export interface RollResult {
+  die: number;
+  stat: StatKey;
+  statValue: number;
+  skill: string | null;
+  skillBonus: number;
+  fatiguePenalty: number;
+  total: number;
+  dc: number;
+  outcome: RollOutcome;
 }
 
 // One ultra-compact record per player turn, persisted for the life of the
@@ -51,6 +77,16 @@ export interface CampaignLogEntry {
   loy?: number;         // companion loyalty change
   got?: string[];       // items acquired
   mood?: 'L' | 'D';     // light / dark leaning of the choice
+  fact?: string;        // one-line consequence written by the GM
+}
+
+// Long-term narrative memory. Maintained from the GM's per-turn
+// chronicle_update and rendered to markdown (lib/chronicle.ts) for every
+// prompt and for export.
+export interface Chronicle {
+  persons: { name: string; note: string; t: number }[];  // NPCs and their current standing
+  threads: { text: string; t: number }[];                // unresolved plot hooks
+  vows: { text: string; t: number }[];                   // promises, debts, oaths
 }
 
 export interface GameState {
@@ -76,11 +112,14 @@ export interface GameState {
   last_scene_summary: string;
   active_threats: string[];
   campaignLog: CampaignLogEntry[];
+  chronicle: Chronicle;
   history: {
     role: 'user' | 'ai'; 
     content: string; 
     narrative?: string; 
     choices?: Record<string, string>;
+    checks?: Record<string, Check | null>;   // per-choice checks proposed by the GM
+    roll?: RollResult;                        // engine roll behind a player choice
     dialogue?: { speaker: string; text: string } | null;
   }[];
   portrait?: string;

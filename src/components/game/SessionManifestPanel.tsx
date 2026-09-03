@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ClipboardList, HeartPulse, Crosshair, MapPin, AlertTriangle, Skull, Flame } from 'lucide-react';
+import { X, ClipboardList, HeartPulse, Crosshair, MapPin, AlertTriangle, Skull, Flame, BookOpen, Download, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useGameStore } from '../../store/useGameStore';
+import { exportChronicle } from '../../lib/backup';
+import { EMPTY_CHRONICLE } from '../../lib/chronicle';
 import { cn } from '@/lib/utils';
 
 interface SessionManifestPanelProps {
@@ -15,6 +17,18 @@ const FATIGUE_LABELS = ['Fresh', 'Winded', 'Tiring', 'Exhausted', 'Collapsing'];
 export default function SessionManifestPanel({ isOpen, onClose }: SessionManifestPanelProps) {
   const game = useGameStore();
   const { hp, fatigue, afflictions, weapons, gear, chapter, corruption, companion } = game;
+  const chronicle = game.chronicle ?? EMPTY_CHRONICLE;
+  const [exported, setExported] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      await exportChronicle(game);
+      setExported(true);
+      setTimeout(() => setExported(false), 2000);
+    } catch (e) {
+      console.error('Chronicle export failed:', e);
+    }
+  };
 
   const fatigueTier = Math.max(0, Math.min(4, fatigue || 0));
   const hpPercent = hp.max > 0 ? (hp.current / hp.max) * 100 : 0;
@@ -149,6 +163,66 @@ export default function SessionManifestPanel({ isOpen, onClose }: SessionManifes
                     <span className="uppercase tracking-tight">{m.label}</span>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* Chronicle — what the GM remembers */}
+            <section>
+              <SectionHeader icon={<BookOpen size={13} />} label="Chronicle" />
+              <div className="space-y-3">
+                <div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Open Threads</div>
+                  {chronicle.threads.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground italic">Nothing unresolved.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {chronicle.threads.map((th) => (
+                        <li key={`${th.t}-${th.text}`} className="text-[11px] leading-snug border-l border-amber-500/40 pl-2">
+                          <span className="text-muted-foreground font-mono text-[9px] mr-1">T{th.t}</span>{th.text}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Persons</div>
+                  {chronicle.persons.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground italic">No names worth remembering yet.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {chronicle.persons.map((p) => (
+                        <li key={p.name} className="text-[11px] leading-snug">
+                          <span className="uppercase tracking-tight font-bold">{p.name}</span>
+                          {p.note && <span className="text-muted-foreground"> — {p.note}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                {chronicle.vows.length > 0 && (
+                  <div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Vows &amp; Debts</div>
+                    <ul className="space-y-1">
+                      {chronicle.vows.map((v) => (
+                        <li key={`${v.t}-${v.text}`} className="text-[11px] leading-snug border-l border-primary/40 pl-2">
+                          <span className="text-muted-foreground font-mono text-[9px] mr-1">T{v.t}</span>{v.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className={cn(
+                    'w-full h-8 gap-1.5 text-[10px] uppercase tracking-widest',
+                    exported ? 'border-primary bg-primary/10 text-primary' : 'border-primary/30 hover:bg-primary/10'
+                  )}
+                >
+                  {exported ? <Check size={12} /> : <Download size={12} />}
+                  {exported ? 'Exported' : 'Export Chronicle (.md)'}
+                </Button>
               </div>
             </section>
 

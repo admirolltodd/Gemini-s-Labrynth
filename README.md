@@ -1,10 +1,12 @@
 # Grim Echoes: 40K Solo RPG
 
-**Grim Echoes** is a narrative-driven, solo role-playing experience set in the grim darkness of the far future. Powered by the Gemini AI, it functions as a digital Game Master, handling narrative, rules enforcement, dice rolls, and atmospheric storytelling.
+**Grim Echoes** is a narrative-driven, solo role-playing experience set in the grim darkness of the far future. Powered by the Gemini AI free tier, it functions as a digital Game Master, handling narrative, rules enforcement, and atmospheric storytelling. The game engine rolls the dice; the Game Master narrates.
 
 ## 🌌 Features
 
-- **AI Game Master**: Powered by Gemini for lore-accurate, reactive storytelling.
+- **AI Game Master**: Powered by free-tier Gemini Flash for lore-accurate, reactive storytelling. No paid plan required.
+- **Honest Dice**: Every risky choice is tagged with a stat, skill, and DC by the Game Master, then rolled by the game engine with the platform's cryptographic RNG. The AI never rolls; it only narrates the outcome it is given.
+- **The Chronicle**: A persistent markdown memory of every decision, NPC, open thread, and vow. It is sent to the Game Master every turn and can be exported as a `.md` file from the Session Manifest.
 - **Dynamic Rules System**: Based on the Warhammer 40,000 Solo RPG v2.0 ruleset.
 - **Companion System**: Recruit companions with unique personalities and loyalty levels that influence game choices.
 - **Grimdark UI**: A high-contrast, atmospheric interface designed for immersion.
@@ -78,8 +80,8 @@ After the build process completes, your installers are located in the `release/`
 
 To run the game in a web browser for development or quick play:
 
-1.  **Set your API Key**:
-    Copy `.env.example` to `.env` and add your `GEMINI_API_KEY`.
+1.  **Get a free API Key**:
+    Create a key in [Google AI Studio](https://aistudio.google.com/). The free tier needs no card. Paste the key into the in-app **Settings** screen (it is stored on-device only and never baked into a build).
 2.  **Run Dev Server**:
     ```bash
     npm run dev
@@ -101,6 +103,18 @@ The resulting `dist/index.html` is a "universal applet".
 If you see "The Warp interferes with your connection" error:
 1.  **Enter API Key**: Open the **Settings** menu in the app and paste your Gemini API key.
 2.  **CORS/Browser Restrictions**: Ensure your browser allows network requests from local files. Some browsers (like Chrome) may require a flag or extension to allow local files to reach the Google AI API, though standard HTTPS usually works.
+
+### 🆓 Free Tier Notes
+
+- **Models**: Turns are served by the free-tier Flash models listed in `TURN_MODELS` in `src/lib/gemini.ts` (currently `gemini-3-flash-preview`, falling back to `gemini-2.5-flash`). Pro models are not on the free tier. If Google retires a preview ID, edit that list.
+- **Fallback**: If the first model is retired, rate-limited, or refused for your key, the next one is tried automatically. Each model has its own free quota, so this also stretches your daily allowance.
+- **Rate limits**: The free tier allows roughly 10–15 requests per minute and a few hundred to a thousand-plus requests per day depending on the model (check the current table in the Gemini API docs). A game turn is one request. If you see "VOX-LINK SATURATED", wait a minute and retry.
+- **Data use**: Google may use free-tier prompts and responses to improve its products. Do not put anything personal in your custom actions.
+- **Portraits**: Character portraits use `gemini-2.5-flash-image`. If that model is not on your free tier the portrait is simply skipped; the game continues.
+
+### 📜 The Chronicle (memory file)
+
+The Game Master keeps a running **Chronicle**: a timeline of every decision with its roll and consequences, the NPCs you have met and their current standing, unresolved threads, and vows or debts. The whole document is sent with every turn, so earlier choices come back to haunt you. Open the **Manifest** panel in-game to read it, and use **Export Chronicle (.md)** to save it as a markdown file (share sheet on Android, download on desktop and web).
 
 ---
 

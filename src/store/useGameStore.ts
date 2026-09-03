@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { GameState, Stats } from '../types/game';
+import { EMPTY_CHRONICLE } from '../lib/chronicle';
 
 interface GameStore extends GameState {
   setGameState: (state: Partial<GameState>) => void;
@@ -64,6 +65,7 @@ const INITIAL_STATE: GameState = {
   last_scene_summary: '',
   active_threats: [],
   campaignLog: [],
+  chronicle: EMPTY_CHRONICLE,
   history: [],
 };
 
